@@ -79,7 +79,7 @@ window.refreshInventoryData = async function() {
   renderInventory();
   if (window.renderDashboardTable) renderDashboardTable();
   if (window.updateDashboardStats) updateDashboardStats();
-  if (window.renderAlerts) renderAlerts(); // Refresh alerts if on that page
+  if (window.renderAlerts) renderAlerts();
 };
 
 window.renderInventory = function() {
@@ -91,7 +91,6 @@ window.renderInventory = function() {
   const query = searchInput ? searchInput.value.toLowerCase() : '';
   const subInvFilter = filterSubInv ? filterSubInv.value : 'all';
 
-  // MERGE LOGIC
   const mergedData = {};
   window.inventoryData.forEach(item => {
     const key = item.code + '_' + (item.subInv || 'N/A'); 
@@ -128,14 +127,10 @@ window.renderInventory = function() {
   `).join('');
 };
 
-// ==========================================
-// NAYA: LOW STOCK ALERTS LOGIC (RED TAGS)
-// ==========================================
 window.renderAlerts = function() {
   const tbody = document.getElementById('alertTable');
   if (!tbody) return;
 
-  // Pehle data merge karein (sare subinvs mila kar)
   const mergedData = {};
   window.inventoryData.forEach(item => {
     if (mergedData[item.code]) {
@@ -153,7 +148,6 @@ window.renderAlerts = function() {
     let isAlert = false;
     let statusText = '';
 
-    // Rules Check
     if (qty <= 0) {
       isAlert = true;
       statusText = 'OUT OF STOCK';
@@ -170,7 +164,6 @@ window.renderAlerts = function() {
     }
   });
 
-  // Sort by lowest qty first
   alerts.sort((a, b) => a.qty - b.qty);
 
   if (alerts.length === 0) {
@@ -179,7 +172,6 @@ window.renderAlerts = function() {
   }
 
   tbody.innerHTML = alerts.map(item => {
-    // Agar zero hai to dark red, warna light red
     const isZero = item.qty <= 0;
     const rowStyle = isZero ? 'background: rgba(201, 58, 77, 0.15);' : 'background: rgba(255, 100, 100, 0.08);';
     const badgeClass = isZero ? 'danger' : 'low';
