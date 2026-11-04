@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Master Logic (Inventory + BOM)
+// PDF-IMPORT.JS — FG is Parent, WIP is Child
 // ==========================================
 
 window.importedRows = [];
@@ -29,7 +29,6 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      // Text to String
       const words = content.items.map(it => {
         return { text: String(it.str || '').trim(), x: it.transform[4], y: it.transform[5] };
       }).filter(w => w.text !== '');
@@ -45,7 +44,7 @@ window.handlePDF = async function(event) {
       lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
 
       let currentItem = null;
-      let currentParent = 'N/A'; // BOM logic track
+      let currentParent = 'N/A'; 
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -55,33 +54,27 @@ window.handlePDF = async function(event) {
         
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
-        // ==========================================
-        // SIRF BOM KE LIYE (Parent-Child Logic)
-        // ==========================================
         if (importType.includes('bom')) {
           if (codeWord) {
-             // Agar FG ya WIP se shuru ho, toh Parent maane
-             if (codeWord.text.startsWith('FG') || codeWord.text.startsWith('WIP') || lineText.includes('Final Assembly') || lineText.includes('Pre Assembly')) {
+             // === SIRF FG KO PARENT MAANO ===
+             if (codeWord.text.startsWith('FG')) {
                 currentParent = codeWord.text;
-                let row = { subInv: 'N/A', code: currentParent, desc: '', uom: 'NOS', qty: 1, cost: 0, parent: 'N/A' };
-                processBOMLine(line.words, row);
-                allRows.push(row);
              } else {
-                // Warna Child maane
+                // WIP, CM, RM, SS sab child hain
                 let row = { subInv: 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
                 processBOMLine(line.words, row);
                 if(row.qty > 0) allRows.push(row);
              }
-          } else if (currentParent !== 'N/A') {
-             // Description continuation for BOM
+          } else if (currentParent !== 'N/A' && allRows.length > 0) {
+             // Description continuation
              const lastRow = allRows[allRows.length - 1];
-             if (lastRow) processBOMLine(line.words, lastRow);
+             if (lastRow && lastRow.parent === currentParent) {
+                processBOMLine(line.words, lastRow);
+             }
           }
         } 
-        // ==========================================
-        // NORMAL INVENTORY / SLOW MOVING (Purana Logic)
-        // ==========================================
         else {
+           // === NORMAL INVENTORY ===
            if (codeWord) {
              let subInv = 'N/A';
              const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
@@ -100,12 +93,11 @@ window.handlePDF = async function(event) {
       }
     }
 
-    // Merge aur Filter Logic
+    // Merge Logic
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       
-      // Sub Inv auto detect for normal inventory
       if (!importType.includes('bom') && r.subInv === 'N/A') {
         const match = r.desc.match(/^'?(\d{3})\s+(.*)/);
         if (match) { r.subInv = match[1]; r.desc = match[2]; }
@@ -115,7 +107,6 @@ window.handlePDF = async function(event) {
       
       if (map[key]) {
         map[key].qty += r.qty;
-        if (r.cost > 0) map[key].cost = r.cost;
       } else {
         map[key] = r; 
       }
@@ -134,12 +125,11 @@ window.handlePDF = async function(event) {
     
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
       <tr>
-        <td>${r.subInv}</td>
+        <td>${r.parent || 'N/A'}</td>
         <td class="code">${r.code}</td>
         <td>${r.desc}</td>
         <td>${r.uom}</td>
         <td>${formatNumber(r.qty)}</td>
-        <td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td>
       </tr>
     `).join('');
 
@@ -147,15 +137,10 @@ window.handlePDF = async function(event) {
     statusDiv.className = 'pdf-status success';
 
   } catch (err) {
-    console.error(err);
     statusDiv.textContent = '❌ Error: ' + err.message;
-    statusDiv.className = 'pdf-status error';
   }
 };
 
-// ==========================================
-// BOM PARSER
-// ==========================================
 function processBOMLine(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
@@ -174,30 +159,24 @@ function processBOMLine(words, item) {
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    if (nums.length > 0) item.qty = nums[0];
+    if (nums.length > 0) item.qty = nums[0]; 
   } else {
     let extra = words.filter(w => !numRegex.test(w.text) && String(w.text) !== String(item.code)).map(w => w.text).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
 
-// ==========================================
-// NORMAL INVENTORY PARSER
-// ==========================================
 function processNormalInventory(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
   let uomIndex = -1;
-  
   for (let i = 0; i < words.length; i++) {
     if (uomRegex.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
   }
-
   if (uomIndex !== -1) {
     let descWords = words.slice(0, uomIndex).map(w => w.text);
     descWords = descWords.filter(t => String(t) !== String(item.code) && !String(t).startsWith('P02-'));
     item.desc = descWords.join(' ');
-    
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
@@ -209,28 +188,21 @@ function processNormalInventory(words, item) {
   }
 }
 
-// ==========================================
-// SLOW MOVING PARSER
-// ==========================================
 function processSlowMoving(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
   let uomIndex = -1;
-  
   for (let i = 0; i < words.length; i++) {
     if (uomRegex.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
   }
-
   if (uomIndex !== -1) {
     let descWords = words.slice(0, uomIndex).map(w => w.text);
     descWords = descWords.filter(t => String(t) !== String(item.code));
     item.desc = descWords.join(' ');
-    
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
   } else {
@@ -239,9 +211,6 @@ function processSlowMoving(words, item) {
   }
 }
 
-// ==========================================
-// SAVE IMPORT
-// ==========================================
 window.confirmImport = async function() {
   if (!window.importedRows.length) return;
 
