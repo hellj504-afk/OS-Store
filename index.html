@@ -5,17 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreOS — Inventory Workspace</title>
 
-<!-- PDF.js for PDF parsing (CDN) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-<!-- CSS Files -->
 <link rel="stylesheet" href="css/background.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
 
-<!-- ===== LIVE ANIMATED BACKGROUND ===== -->
 <div class="bg-canvas">
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
@@ -24,10 +21,8 @@
   <div class="bg-grid"></div>
 </div>
 
-<!-- ===== APP SHELL ===== -->
 <div class="shell">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="brand">
       <div class="logo">◈</div>
@@ -50,10 +45,8 @@
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
   <main>
 
-    <!-- TOPBAR -->
     <header class="topbar">
       <div>
         <div class="eyebrow">STORE OPERATIONS / OVERVIEW</div>
@@ -65,9 +58,7 @@
       </div>
     </header>
 
-    <!-- ============ PAGE: DASHBOARD ============ -->
     <section id="page-dashboard" class="section-page active">
-
       <div class="stats">
         <div class="stat">
           <div class="stat-top"><div class="stat-icon">▦</div><span class="trend">LIVE</span></div>
@@ -120,19 +111,19 @@
           </table>
         </div>
       </div>
-
     </section>
 
-    <!-- ============ PAGE: INVENTORY ============ -->
     <section id="page-inventory" class="section-page">
-
       <div class="panel">
         <div class="panel-head">
           <div>
             <h3>Custom Inventory</h3>
             <div class="panel-sub">All items stored in Firebase Firestore</div>
           </div>
-          <button class="primary" onclick="openItemModal()">＋ Add Item</button>
+          <div>
+            <button class="danger" onclick="clearSection()" style="margin-right: 8px;">Clear All</button>
+            <button class="primary" onclick="openItemModal()">＋ Add Item</button>
+          </div>
         </div>
         <div class="search-row">
           <div class="search">
@@ -151,12 +142,9 @@
           </table>
         </div>
       </div>
-
     </section>
 
-    <!-- ============ PAGE: PDF IMPORT ============ -->
     <section id="page-pdf" class="section-page">
-
       <div class="panel">
         <div class="panel-head">
           <div>
@@ -174,7 +162,6 @@
           </select>
         </div>
 
-        <!-- Filters -->
         <div class="form-grid" style="margin-bottom:16px">
           <div class="field">
             <label>2. Sub Inventory Filter (Optional)</label>
@@ -206,6 +193,13 @@
           </div>
         </div>
 
+        <div class="field" style="margin-bottom:16px">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color: #c93a4d; font-weight: bold;">
+            <input type="checkbox" id="chkDeleteOld" style="width:auto; transform:scale(1.2);">
+            Purana Data Delete karein aur naya import karein (Auto-Clear)
+          </label>
+        </div>
+
         <div class="import-box" onclick="document.getElementById('pdfFile').click()">
           <div style="font-size:36px;margin-bottom:10px">📄</div>
           <div style="font-weight:700;font-size:14px">Click to select PDF file</div>
@@ -230,13 +224,11 @@
           </div>
         </div>
       </div>
-
     </section>
 
   </main>
 </div>
 
-<!-- ===== MODAL: ADD ITEM ===== -->
 <div class="modal" id="itemModal">
   <div class="modal-card">
     <div class="modal-head">
@@ -272,15 +264,10 @@
   </div>
 </div>
 
-<!-- ===== TOAST ===== -->
 <div class="toast" id="toast"></div>
 
-<!-- ============================================================
-     SCRIPT LOADING ORDER (IMPORTANT!)
-     ============================================================ -->
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/storage.js"></script>
-
 <script src="js/utils.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/dashboard.js"></script>
