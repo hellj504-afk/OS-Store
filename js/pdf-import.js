@@ -122,7 +122,6 @@ window.handlePDF = async function(event) {
   }
 };
 
-// NORMAL INVENTORY PARSER
 function processNormalInventory(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
@@ -148,7 +147,6 @@ function processNormalInventory(words, item) {
   }
 }
 
-// SLOW MOVING PARSER
 function processSlowMoving(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
