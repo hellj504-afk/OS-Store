@@ -14,7 +14,7 @@ window.handlePDF = async function(event) {
 
   const statusDiv = document.getElementById('pdfStatus');
   const previewArea = document.getElementById('previewArea');
-  const importType = document.getElementById('importType').value; // inventory ya slow_moving
+  const importType = document.getElementById('importType').value;
   
   statusDiv.textContent = '⏳ Reading PDF...';
   statusDiv.className = 'pdf-status';
@@ -29,13 +29,7 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      // Words extract karein coordinates ke sath
-      const words = content.items.map(it => ({ 
-        text: it.str.trim(), 
-        x: it.transform[4], 
-        y: it.transform[5] 
-      })).filter(w => w.text !== '');
-
+      const words = content.items.map(it => ({ text: it.str.trim(), x: it.transform[4], y: it.transform[5] })).filter(w => w.text !== '');
       const lines = [];
       words.forEach(word => {
         let line = lines.find(l => Math.abs(l.y - word.y) < 5);
@@ -43,8 +37,8 @@ window.handlePDF = async function(event) {
         else lines.push({ y: word.y, words: [word] });
       });
 
-      lines.sort((a, b) => b.y - a.y); // Top to bottom
-      lines.forEach(l => l.words.sort((a, b) => a.x - b.x)); // Left to right
+      lines.sort((a, b) => b.y - a.y);
+      lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
 
       let currentItem = null;
 
@@ -54,16 +48,12 @@ window.handlePDF = async function(event) {
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        // Item Code dhoondein (CM0392, RM0141, FG1060)
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (codeWord) {
-          // Naya item shuru
           let subInv = 'N/A';
-          if (importType === 'inventory') {
-             const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
-             if (subWord) subInv = subWord.text.replace("'", "");
-          }
+          const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
+          if (subWord) subInv = subWord.text.replace("'", "");
 
           currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
           allRows.push(currentItem);
@@ -74,7 +64,6 @@ window.handlePDF = async function(event) {
              processNormalInventory(line.words, currentItem);
           }
         } else if (currentItem) {
-          // Description ya data ki agli line
           if (importType === 'slow_moving') {
              processSlowMoving(line.words, currentItem);
           } else {
@@ -84,12 +73,10 @@ window.handlePDF = async function(event) {
       }
     }
 
-    // Duplicates merge karein
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       
-      // Sub Inv N/A fix (agar description '002 se shuru ho raha ho)
       if (r.subInv === 'N/A') {
         const match = r.desc.match(/^'?(\d{3})\s+(.*)/);
         if (match) { r.subInv = match[1]; r.desc = match[2]; }
@@ -135,10 +122,7 @@ window.handlePDF = async function(event) {
   }
 };
 
-// ==========================================
-// 1. NORMAL INVENTORY PARSER (Work in Process)
-// Format: 200 | P02-... | CM0392... | Desc | UOM | 14.00 | 0.00 | 0.00 | 14.00
-// ==========================================
+// NORMAL INVENTORY PARSER
 function processNormalInventory(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
@@ -149,28 +133,22 @@ function processNormalInventory(words, item) {
   }
 
   if (uomIndex !== -1) {
-    // UOM mil gaya, iske pehle Description hai
     let descWords = words.slice(0, uomIndex).map(w => w.text);
     descWords = descWords.filter(t => t !== item.code && !t.startsWith('P02-'));
     item.desc = descWords.join(' ');
     
-    // UOM ke baad sirf numbers hain, aakhri number Closing Qty hai
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
     if (nums.length > 0) item.qty = nums[nums.length - 1];
   } else {
-    // Agar UOM nahi hai line mein, toh ye description ki continuation hai
     let extra = words.filter(w => !numRegex.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.startsWith('P02-')).map(w => w.text).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
 
-// ==========================================
-// 2. SLOW MOVING PARSER
-// Format: FG1060... | Desc | NOS | Stock | Rate | Value ...
-// ==========================================
+// SLOW MOVING PARSER
 function processSlowMoving(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
@@ -181,30 +159,23 @@ function processSlowMoving(words, item) {
   }
 
   if (uomIndex !== -1) {
-    // Description UOM se pehle hoti hai
     let descWords = words.slice(0, uomIndex).map(w => w.text);
     descWords = descWords.filter(t => t !== item.code);
     item.desc = descWords.join(' ');
     
-    // UOM ke baad numbers: Stock Qty (pehla), Rate (dusra)
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
     
-    // Slow moving mein pehle 2 numbers Stock aur Rate hote hain
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1];
   } else {
-    // Agar UOM nahi mila, toh description continuation hai (jese 2 line wali desc)
     let extra = words.filter(w => !numRegex.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
 
-// ==========================================
-// SAVE TO FIREBASE
-// ==========================================
 window.confirmImport = async function() {
   if (!window.importedRows.length) return;
 
