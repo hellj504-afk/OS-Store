@@ -4,7 +4,6 @@
 
 window.importedRows = [];
 
-// PDF.js worker setup
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
@@ -31,7 +30,6 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      // 1. Extract all words with their X, Y coordinates
       const words = content.items.map(it => ({
         text: it.str.trim(),
         x: it.transform[4],
@@ -39,7 +37,6 @@ window.handlePDF = async function(event) {
         width: it.width
       })).filter(w => w.text !== '');
 
-      // 2. Group words into lines based on Y-coordinate (with tolerance)
       const lines = [];
       words.forEach(word => {
         let line = lines.find(l => Math.abs(l.y - word.y) < 5);
@@ -50,18 +47,15 @@ window.handlePDF = async function(event) {
         }
       });
 
-      // Sort lines top to bottom, words left to right
       lines.sort((a, b) => b.y - a.y);
       lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
 
-      // 3. Process lines
       let currentItem = null;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const lineText = line.words.map(w => w.text).join(' ');
         
-        // Skip headers
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
         const subInvWord = line.words.find(w => w.x < 80 && /^\d{3}$/.test(w.text));
@@ -83,17 +77,22 @@ window.handlePDF = async function(event) {
       }
     }
 
-    // 4. Apply Filters & Deduplicate
     let filteredRows = allRows;
     if (selectedSubInv !== 'all') {
       filteredRows = filteredRows.filter(r => r.subInv === selectedSubInv);
     }
     
+    // Deduplicate for preview (combine qty if same code appears)
     const map = {};
     filteredRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       if(r.desc.endsWith(r.uom)) r.desc = r.desc.slice(0, -r.uom.length).trim();
-      map[r.code] = r; 
+      
+      if (map[r.code]) {
+         map[r.code].qty += r.qty;
+      } else {
+         map[r.code] = r; 
+      }
     });
     
     const finalRows = Object.values(map);
@@ -105,7 +104,6 @@ window.handlePDF = async function(event) {
       return;
     }
 
-    // Show Preview
     document.getElementById('previewArea').style.display = 'block';
     document.getElementById('previewCount').textContent = finalRows.length;
     
@@ -143,12 +141,10 @@ function processLineWords(words, item) {
   }
 
   if (uomIndex !== -1) {
-    // UOM se pehle ke words = Description
     let descWords = words.slice(0, uomIndex).map(w => w.text);
     descWords = descWords.filter(t => t !== item.code && !/^\d{3}$/.test(t) && !t.startsWith('P02-'));
     item.desc = descWords.join(' ');
     
-    // UOM ke baad ke numbers = Opening, Received, Issued, Closing
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) {
@@ -156,10 +152,9 @@ function processLineWords(words, item) {
       }
     }
     if (nums.length > 0) {
-      item.qty = nums[nums.length - 1]; // Last number is Closing
+      item.qty = nums[nums.length - 1];
     }
   } else {
-    // Continuation of description
     let extraDesc = words.filter(w => 
       !numRegex.test(w.text) && 
       w.text !== item.code && 
@@ -183,10 +178,22 @@ window.confirmImport = async function() {
   const btn = document.querySelector('#previewArea .primary');
   const originalText = btn.textContent;
   
-  btn.textContent = 'Importing to Firebase...';
+  btn.textContent = 'Importing...';
   btn.disabled = true;
 
   try {
+    // === AUTO DELETE PURANA DATA ===
+    const shouldDeleteOld = document.getElementById('chkDeleteOld')?.checked;
+    if (shouldDeleteOld) {
+      btn.textContent = 'Clearing old data...';
+      const allData = await window.loadInventoryFromFirebase();
+      for (const item of allData) {
+        await window.deleteItemFromFirebase(item.id || item.code);
+      }
+    }
+
+    btn.textContent = 'Importing new data...';
+    
     const itemsToSave = window.importedRows.map(row => ({
       ...row,
       source: `PDF (${dest})`,
