@@ -1,8 +1,8 @@
 // ==========================================
-// PDF-IMPORT.JS — 100% Fixed (String Conversion)
+// PDF-IMPORT.JS — With BOM Parser
 // ==========================================
 
-window.importedRows = [];
+window.importedRows = []; // For Inventory
 
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -29,13 +29,8 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      // HAR TEXT KO FORCEFULLY STRING MEIN CONVERT KAREIN
       const words = content.items.map(it => {
-        return { 
-          text: String(it.str || '').trim(), 
-          x: it.transform[4], 
-          y: it.transform[5] 
-        };
+        return { text: String(it.str || '').trim(), x: it.transform[4], y: it.transform[5] };
       }).filter(w => w.text !== '');
 
       const lines = [];
@@ -49,53 +44,63 @@ window.handlePDF = async function(event) {
       lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
 
       let currentItem = null;
+      let currentParent = null; // BOM ke liye
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const lineText = line.words.map(w => w.text).join(' ');
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
-        
-        const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
-        if (codeWord) {
-          let subInv = 'N/A';
-          const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
-          if (subWord) subInv = subWord.text.replace("'", "");
+        // Agar BOM hai
+        if (importType.includes('bom')) {
+           // BOM logic: Find Parent Header or Child Item
+           // Aapke BOM PDF mein Parent Code (FG...) lines mein alag se aata hai.
+           // Abhi ke liye hum saare codes utha rahe hain (child).
+           const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
+           if (codeWord) {
+             // BOM mein Component Code, Desc, UOM, Qty hoti hai
+             let row = { code: codeWord.text, desc: '', uom: 'NOS', qty: 0 };
+             processBOMLine(line.words, row);
+             if(row.qty > 0) allRows.push(row);
+           }
+        } else {
+           // Normal Inventory logic
+           const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
+           if (codeWord) {
+              let subInv = 'N/A';
+              const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
+              if (subWord) subInv = subWord.text.replace("'", "");
 
-          currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
-          allRows.push(currentItem);
-          
-          if (importType === 'slow_moving') {
-             processSlowMoving(line.words, currentItem);
-          } else {
-             processNormalInventory(line.words, currentItem);
-          }
-        } else if (currentItem) {
-          if (importType === 'slow_moving') {
-             processSlowMoving(line.words, currentItem);
-          } else {
-             processNormalInventory(line.words, currentItem);
-          }
+              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
+              allRows.push(currentItem);
+              
+              if (importType === 'slow_moving') processSlowMoving(line.words, currentItem);
+              else processNormalInventory(line.words, currentItem);
+           } else if (currentItem) {
+              if (importType === 'slow_moving') processSlowMoving(line.words, currentItem);
+              else processNormalInventory(line.words, currentItem);
+           }
         }
       }
     }
 
+    // Filter and Merge
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       
-      if (r.subInv === 'N/A') {
+      if (!importType.includes('bom') && r.subInv === 'N/A') {
         const match = r.desc.match(/^'?(\d{3})\s+(.*)/);
         if (match) { r.subInv = match[1]; r.desc = match[2]; }
       }
 
-      if (map[r.code]) {
-        map[r.code].qty += r.qty;
-        if (r.cost > 0) map[r.code].cost = r.cost;
-        if (map[r.code].subInv === 'N/A' && r.subInv !== 'N/A') map[r.code].subInv = r.subInv;
+      const key = r.code + (r.subInv && r.subInv !== 'N/A' ? '_' + r.subInv : '');
+      if (map[key]) {
+        map[key].qty += r.qty;
+        if (r.cost > 0) map[key].cost = r.cost;
       } else {
-        map[r.code] = r; 
+        map[key] = r; 
       }
     });
     
@@ -103,8 +108,7 @@ window.handlePDF = async function(event) {
     window.importedRows = finalRows;
 
     if (!finalRows.length) {
-      statusDiv.textContent = '⚠ No valid rows found. Check PDF format.';
-      statusDiv.className = 'pdf-status error';
+      statusDiv.textContent = '⚠ No valid rows found. Check format.';
       return;
     }
 
@@ -113,7 +117,7 @@ window.handlePDF = async function(event) {
     
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
       <tr>
-        <td>${r.subInv}</td>
+        <td>${r.subInv || '-'}</td>
         <td class="code">${r.code}</td>
         <td>${r.desc}</td>
         <td>${r.uom}</td>
@@ -122,15 +126,41 @@ window.handlePDF = async function(event) {
       </tr>
     `).join('');
 
-    statusDiv.textContent = `✓ Extracted ${finalRows.length} rows successfully.`;
+    statusDiv.textContent = `✓ Extracted ${finalRows.length} rows.`;
     statusDiv.className = 'pdf-status success';
 
   } catch (err) {
-    console.error(err);
     statusDiv.textContent = '❌ Error: ' + err.message;
     statusDiv.className = 'pdf-status error';
   }
 };
+
+// ==========================================
+// BOM PARSER (Pre, Final, BOM Detail)
+// ==========================================
+function processBOMLine(words, item) {
+  const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
+  const numRegex = /^[\d,]+\.?\d*$/;
+  let uomIndex = -1;
+  
+  for (let i = 0; i < words.length; i++) {
+    if (uomRegex.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
+  }
+
+  if (uomIndex !== -1) {
+    let descWords = words.slice(0, uomIndex).map(w => w.text);
+    // Description se pehla number (Seq) aur code hata dein
+    descWords = descWords.filter(t => !numRegex.test(t) && String(t) !== String(item.code));
+    item.desc = descWords.join(' ');
+    
+    // BOM mein UOM ke baad pehla number Net Qty hota hai
+    const nums = [];
+    for (let i = uomIndex + 1; i < words.length; i++) {
+      if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+    }
+    if (nums.length > 0) item.qty = nums[0]; // Net Qty
+  }
+}
 
 // ==========================================
 // NORMAL INVENTORY PARSER
@@ -153,14 +183,9 @@ function processNormalInventory(words, item) {
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    if (nums.length > 0) item.qty = nums[nums.length - 1];
+    if (nums.length > 0) item.qty = nums[nums.length - 1]; 
   } else {
-    let extra = words.filter(w => 
-      !numRegex.test(w.text) && 
-      String(w.text) !== String(item.code) && 
-      !String(w.text).includes(item.subInv) && 
-      !String(w.text).startsWith('P02-')
-    ).map(w => w.text).join(' ');
+    let extra = words.filter(w => !numRegex.test(w.text) && String(w.text) !== String(item.code) && !String(w.text).includes(item.subInv) && !String(w.text).startsWith('P02-')).map(w => w.text).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
