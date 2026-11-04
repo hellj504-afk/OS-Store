@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — FG is Parent, WIP is Child
+// PDF-IMPORT.JS — Final Safe Version
 // ==========================================
 
 window.importedRows = [];
@@ -29,34 +29,34 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      const words = content.items.map(it => {
+      const words = content.items.map(function(it) {
         return { text: String(it.str || '').trim(), x: it.transform[4], y: it.transform[5] };
-      }).filter(w => w.text !== '');
+      }).filter(function(w) { return w.text !== ''; });
 
       const lines = [];
-      words.forEach(word => {
-        let line = lines.find(l => Math.abs(l.y - word.y) < 5);
+      words.forEach(function(word) {
+        let line = lines.find(function(l) { return Math.abs(l.y - word.y) < 5; });
         if (line) line.words.push(word);
         else lines.push({ y: word.y, words: [word] });
       });
 
-      lines.sort((a, b) => b.y - a.y);
-      lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
+      lines.sort(function(a, b) { return b.y - a.y; });
+      lines.forEach(function(l) { l.words.sort(function(a, b) { return a.x - b.x; }); });
 
       let currentItem = null;
       let currentParent = 'N/A'; 
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        const lineText = line.words.map(w => w.text).join(' ');
+        const lineText = line.words.map(function(w) { return w.text; }).join(' ');
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
+        const codeWord = line.words.find(function(w) { return /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text); });
 
         if (importType.includes('bom') || importType.includes('assembly')) {
           if (codeWord) {
-             // === FIX: SIRF FG KO PARENT MAANA JAYEGA ===
+             // SIRF FG KO PARENT MAANA JAYEGA
              if (codeWord.text.startsWith('FG')) {
                 currentParent = codeWord.text;
              } else {
@@ -66,7 +66,6 @@ window.handlePDF = async function(event) {
                 if(row.qty > 0) allRows.push(row);
              }
           } else if (currentParent !== 'N/A' && allRows.length > 0) {
-             // Description continuation for child
              const lastRow = allRows[allRows.length - 1];
              if (lastRow && lastRow.parent === currentParent) {
                 processBOMLine(line.words, lastRow);
@@ -74,10 +73,9 @@ window.handlePDF = async function(event) {
           }
         } 
         else {
-           // === NORMAL INVENTORY ===
            if (codeWord) {
              let subInv = 'N/A';
-             const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
+             const subWord = line.words.find(function(w) { return w.x < codeWord.x && /^'?\d{3}$/.test(w.text); });
              if (subWord) subInv = subWord.text.replace("'", "");
 
              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
@@ -94,7 +92,7 @@ window.handlePDF = async function(event) {
     }
 
     const map = {};
-    allRows.forEach(r => { 
+    allRows.forEach(function(r) { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       
       if (!importType.includes('bom') && !importType.includes('assembly') && r.subInv === 'N/A') {
@@ -122,15 +120,16 @@ window.handlePDF = async function(event) {
     document.getElementById('previewArea').style.display = 'block';
     document.getElementById('previewCount').textContent = finalRows.length;
     
-    document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
+    document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(function(r) {
+      return `
       <tr>
         <td>${r.parent || 'N/A'}</td>
         <td class="code">${r.code}</td>
         <td>${r.desc}</td>
         <td>${r.uom}</td>
         <td>${formatNumber(r.qty)}</td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
 
     statusDiv.textContent = `✓ Extracted ${finalRows.length} rows.`;
     statusDiv.className = 'pdf-status success';
@@ -150,8 +149,8 @@ function processBOMLine(words, item) {
   }
 
   if (uomIndex !== -1) {
-    let descWords = words.slice(0, uomIndex).map(w => w.text);
-    descWords = descWords.filter(t => !numRegex.test(t) && String(t) !== String(item.code));
+    let descWords = words.slice(0, uomIndex).map(function(w) { return w.text; });
+    descWords = descWords.filter(function(t) { return !numRegex.test(t) && String(t) !== String(item.code); });
     item.desc = descWords.join(' ');
     
     const nums = [];
@@ -160,7 +159,7 @@ function processBOMLine(words, item) {
     }
     if (nums.length > 0) item.qty = nums[0]; 
   } else {
-    let extra = words.filter(w => !numRegex.test(w.text) && String(w.text) !== String(item.code)).map(w => w.text).join(' ');
+    let extra = words.filter(function(w) { return !numRegex.test(w.text) && String(w.text) !== String(item.code); }).map(function(w) { return w.text; }).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
@@ -173,8 +172,8 @@ function processNormalInventory(words, item) {
     if (uomRegex.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
   }
   if (uomIndex !== -1) {
-    let descWords = words.slice(0, uomIndex).map(w => w.text);
-    descWords = descWords.filter(t => String(t) !== String(item.code) && !String(t).startsWith('P02-'));
+    let descWords = words.slice(0, uomIndex).map(function(w) { return w.text; });
+    descWords = descWords.filter(function(t) { return String(t) !== String(item.code) && !String(t).startsWith('P02-'); });
     item.desc = descWords.join(' ');
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
@@ -182,7 +181,7 @@ function processNormalInventory(words, item) {
     }
     if (nums.length > 0) item.qty = nums[nums.length - 1]; 
   } else {
-    let extra = words.filter(w => !numRegex.test(w.text) && String(w.text) !== String(item.code) && !String(w.text).includes(item.subInv) && !String(w.text).startsWith('P02-')).map(w => w.text).join(' ');
+    let extra = words.filter(function(w) { return !numRegex.test(w.text) && String(w.text) !== String(item.code) && !String(w.text).includes(item.subInv) && !String(w.text).startsWith('P02-'); }).map(function(w) { return w.text; }).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
@@ -195,8 +194,8 @@ function processSlowMoving(words, item) {
     if (uomRegex.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
   }
   if (uomIndex !== -1) {
-    let descWords = words.slice(0, uomIndex).map(w => w.text);
-    descWords = descWords.filter(t => String(t) !== String(item.code));
+    let descWords = words.slice(0, uomIndex).map(function(w) { return w.text; });
+    descWords = descWords.filter(function(t) { return String(t) !== String(item.code); });
     item.desc = descWords.join(' ');
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
@@ -205,7 +204,7 @@ function processSlowMoving(words, item) {
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
   } else {
-    let extra = words.filter(w => !numRegex.test(w.text) && String(w.text) !== String(item.code)).map(w => w.text).join(' ');
+    let extra = words.filter(function(w) { return !numRegex.test(w.text) && String(w.text) !== String(item.code); }).map(function(w) { return w.text; }).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
@@ -229,9 +228,9 @@ window.confirmImport = async function() {
     }
 
     btn.textContent = 'Importing new data...';
-    const itemsToSave = window.importedRows.map(row => ({ 
-      ...row, source: `PDF (${importType})`, updatedAt: new Date().toISOString() 
-    }));
+    const itemsToSave = window.importedRows.map(function(row) { 
+      return Object.assign({}, row, { source: `PDF (${importType})`, updatedAt: new Date().toISOString() });
+    });
     
     const savedCount = await window.bulkSaveToFirebase(itemsToSave);
     showToast(`Imported ${savedCount} items!`, 'success');
