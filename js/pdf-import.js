@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Final Exact BOM Logic
+// PDF-IMPORT.JS — Super Fast & Fixed Import
 // ==========================================
 
 window.importedRows = [];
@@ -16,7 +16,7 @@ window.handlePDF = async function(event) {
   const previewArea = document.getElementById('previewArea');
   const importType = document.getElementById('importType').value;
   
-  statusDiv.textContent = '⏳ Reading PDF...';
+  statusDiv.textContent = '⏳ Reading PDF (Fast Mode)...';
   statusDiv.className = 'pdf-status';
   previewArea.style.display = 'none';
 
@@ -48,40 +48,35 @@ window.handlePDF = async function(event) {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        const lineText = line.words.map(function(w) { return w.text; }).join(' ');
         
-        if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
+        // FAST FILTER: Agar line mein 'A' se 'Z' tak koi code jesa pattern nahi hai, toh skip karo
+        const lineText = line.words.map(function(w) { return w.text; }).join(' ');
+        if (!/[A-Z]{2,4}\d{3,4}-/.test(lineText) && !lineText.includes('Description')) continue;
 
-        // BOM LOGIC
+        if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
+        
+        const codeWord = line.words.find(function(w) { return /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text); });
+
         if (importType.includes('bom') || importType.includes('assembly')) {
-           
-           // Har line mein saare codes dhoondein
-           const codes = line.words.filter(function(w) { return /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text); });
-           
-           if (codes.length > 0) {
-              // Pehle check karein ke is line mein koi Parent (FG ya WIP) hai ya nahi
-              const parentCode = codes.find(function(c) { return c.text.startsWith('FG') || c.text.startsWith('WIP'); });
-              
-              if (parentCode) {
-                 currentParent = parentCode.text;
-              } else {
-                 // Agar sirf CM, RM, SS hain, toh ye Child hain
-                 const childCode = codes[0];
-                 let row = { subInv: 'N/A', code: childCode.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
-                 processBOMLine(line.words, row);
-                 if(row.qty > 0) allRows.push(row);
-              }
-           } else if (currentParent !== 'N/A' && allRows.length > 0) {
-              // Description continuation
-              const lastRow = allRows[allRows.length - 1];
-              if (lastRow && lastRow.parent === currentParent) {
-                 processBOMLine(line.words, lastRow);
-              }
-           }
+          if (codeWord) {
+             // === FIX: WIP aur FG dono Parent banenge ===
+             if (codeWord.text.startsWith('FG') || codeWord.text.startsWith('WIP')) {
+                currentParent = codeWord.text;
+             } else {
+                // Child Material (CM, RM, SS)
+                let row = { subInv: 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
+                processBOMLine(line.words, row);
+                if(row.qty > 0) allRows.push(row);
+             }
+          } else if (currentParent !== 'N/A' && allRows.length > 0) {
+             const lastRow = allRows[allRows.length - 1];
+             if (lastRow && lastRow.parent === currentParent) {
+                processBOMLine(line.words, lastRow);
+             }
+          }
         } 
-        // NORMAL INVENTORY LOGIC
         else {
-           const codeWord = line.words.find(function(w) { return /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text); });
+           // === NORMAL INVENTORY / SLOW MOVING ===
            if (codeWord) {
              let subInv = 'N/A';
              const subWord = line.words.find(function(w) { return w.x < codeWord.x && /^'?\d{3}$/.test(w.text); });
@@ -140,14 +135,19 @@ window.handlePDF = async function(event) {
       </tr>`;
     }).join('');
 
-    statusDiv.textContent = `✓ Extracted ${finalRows.length} rows.`;
+    statusDiv.textContent = `✓ Extracted ${finalRows.length} rows successfully.`;
     statusDiv.className = 'pdf-status success';
 
   } catch (err) {
+    console.error(err);
     statusDiv.textContent = '❌ Error: ' + err.message;
+    statusDiv.className = 'pdf-status error';
   }
 };
 
+// ==========================================
+// PARSE HELPERS
+// ==========================================
 function processBOMLine(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
@@ -218,12 +218,21 @@ function processSlowMoving(words, item) {
   }
 }
 
+// ==========================================
+// IMPORT TO FIREBASE (FIXED)
+// ==========================================
 window.confirmImport = async function() {
-  if (!window.importedRows.length) return;
+  if (!window.importedRows.length) {
+    showToast('Koi data nahi hai import ke liye!', 'error');
+    return;
+  }
 
   const importType = document.getElementById('importType').value;
   const btn = document.querySelector('#previewArea .primary');
-  btn.textContent = 'Importing...'; btn.disabled = true;
+  const originalText = btn.textContent;
+  
+  btn.textContent = 'Importing... Please wait'; 
+  btn.disabled = true;
 
   try {
     if (document.getElementById('chkDeleteOld')?.checked) {
@@ -236,22 +245,29 @@ window.confirmImport = async function() {
       }
     }
 
-    btn.textContent = 'Importing new data...';
+    btn.textContent = 'Saving to Database...';
+    
+    // Batch save logic (Fast import)
     const itemsToSave = window.importedRows.map(function(row) { 
       return Object.assign({}, row, { source: `PDF (${importType})`, updatedAt: new Date().toISOString() });
     });
     
     const savedCount = await window.bulkSaveToFirebase(itemsToSave);
-    showToast(`Imported ${savedCount} items!`, 'success');
+    
+    showToast(`Successfully imported ${savedCount} items!`, 'success');
     
     document.getElementById('previewArea').style.display = 'none';
     document.getElementById('pdfStatus').textContent = `✓ Import complete: ${savedCount} rows saved.`;
     document.getElementById('pdfFile').value = ''; 
     
     await refreshInventoryData();
+    if (window.renderBOM) window.renderBOM();
+    
   } catch (err) {
+    console.error(err);
     showToast('Import failed: ' + err.message, 'error');
   } finally {
-    btn.textContent = '✓ Import Now'; btn.disabled = false;
+    btn.textContent = originalText; 
+    btn.disabled = false;
   }
 };
