@@ -34,7 +34,7 @@ window.saveItem = async function() {
 
   try {
     if (await window.saveItemToFirebase(item)) {
-      showToast('Item successfully saved!', 'success');
+      showToast('Item saved!', 'success');
       closeItemModal();
       await refreshInventoryData();
     }
@@ -85,10 +85,8 @@ window.renderInventory = function() {
   const query = searchInput ? searchInput.value.toLowerCase() : '';
   const subInvFilter = filterSubInv ? filterSubInv.value : 'all';
 
-  // MERGE LOGIC
   const mergedData = {};
   window.inventoryData.forEach(item => {
-    // Agar same code aur same Sub Inv hai toh merge karein
     const key = item.code + '_' + (item.subInv || 'N/A'); 
     if (mergedData[key]) {
       mergedData[key].qty += Number(item.qty) || 0;
@@ -99,7 +97,6 @@ window.renderInventory = function() {
 
   let finalData = Object.values(mergedData);
 
-  // Filter lagayen
   finalData = finalData.filter(item => {
     const matchesSearch = !query || item.code.toLowerCase().includes(query) || (item.desc || '').toLowerCase().includes(query);
     const matchesSubInv = subInvFilter === 'all' || item.subInv === subInvFilter;
@@ -108,15 +105,8 @@ window.renderInventory = function() {
 
   finalData.sort((a, b) => a.code.localeCompare(b.code));
 
-  if (!window.isDataLoaded) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">Loading from Firebase...</td></tr>`;
-    return;
-  }
-
-  if (finalData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">No items found.</td></tr>`;
-    return;
-  }
+  if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="7" class="empty">Loading...</td></tr>`;
+  if (finalData.length === 0) return tbody.innerHTML = `<tr><td colspan="7" class="empty">No items found.</td></tr>`;
 
   tbody.innerHTML = finalData.map(item => `
     <tr>
