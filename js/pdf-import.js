@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Complete Parser (Slow Moving & Inventory)
+// PDF-IMPORT.JS — Exact Format Parsers
 // ==========================================
 
 window.importedRows = [];
@@ -14,7 +14,7 @@ window.handlePDF = async function(event) {
 
   const statusDiv = document.getElementById('pdfStatus');
   const previewArea = document.getElementById('previewArea');
-  const importType = document.getElementById('importType').value; // Check karein konsi PDF hai
+  const importType = document.getElementById('importType').value; // inventory ya slow_moving
   
   statusDiv.textContent = '⏳ Reading PDF...';
   statusDiv.className = 'pdf-status';
@@ -29,7 +29,13 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      const words = content.items.map(it => ({ text: it.str.trim(), x: it.transform[4], y: it.transform[5] })).filter(w => w.text !== '');
+      // Words extract karein coordinates ke sath
+      const words = content.items.map(it => ({ 
+        text: it.str.trim(), 
+        x: it.transform[4], 
+        y: it.transform[5] 
+      })).filter(w => w.text !== '');
+
       const lines = [];
       words.forEach(word => {
         let line = lines.find(l => Math.abs(l.y - word.y) < 5);
@@ -37,8 +43,8 @@ window.handlePDF = async function(event) {
         else lines.push({ y: word.y, words: [word] });
       });
 
-      lines.sort((a, b) => b.y - a.y);
-      lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
+      lines.sort((a, b) => b.y - a.y); // Top to bottom
+      lines.forEach(l => l.words.sort((a, b) => a.x - b.x)); // Left to right
 
       let currentItem = null;
 
@@ -48,33 +54,51 @@ window.handlePDF = async function(event) {
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        // Item Code dhoondein (CM, RM, FG, WIP etc)
+        // Item Code dhoondein (CM0392, RM0141, FG1060)
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (codeWord) {
-          // Sub Inv dhoondein (agar ho toh)
+          // Naya item shuru
           let subInv = 'N/A';
-          const subInvWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
-          if (subInvWord) subInv = subInvWord.text.replace("'", "");
+          if (importType === 'inventory') {
+             const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
+             if (subWord) subInv = subWord.text.replace("'", "");
+          }
 
           currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
           allRows.push(currentItem);
           
-          // Function call karein aur batayen ke Slow Moving hai ya Normal
-          processLineWords(line.words, currentItem, importType === 'slow_moving');
+          if (importType === 'slow_moving') {
+             processSlowMoving(line.words, currentItem);
+          } else {
+             processNormalInventory(line.words, currentItem);
+          }
         } else if (currentItem) {
-          processLineWords(line.words, currentItem, importType === 'slow_moving');
+          // Description ya data ki agli line
+          if (importType === 'slow_moving') {
+             processSlowMoving(line.words, currentItem);
+          } else {
+             processNormalInventory(line.words, currentItem);
+          }
         }
       }
     }
 
-    // Merge same item codes
+    // Duplicates merge karein
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
+      
+      // Sub Inv N/A fix (agar description '002 se shuru ho raha ho)
+      if (r.subInv === 'N/A') {
+        const match = r.desc.match(/^'?(\d{3})\s+(.*)/);
+        if (match) { r.subInv = match[1]; r.desc = match[2]; }
+      }
+
       if (map[r.code]) {
         map[r.code].qty += r.qty;
-        if (r.cost > 0) map[r.code].cost = r.cost; // Latest cost update karein
+        if (r.cost > 0) map[r.code].cost = r.cost;
+        if (map[r.code].subInv === 'N/A' && r.subInv !== 'N/A') map[r.code].subInv = r.subInv;
       } else {
         map[r.code] = r; 
       }
@@ -84,14 +108,13 @@ window.handlePDF = async function(event) {
     window.importedRows = finalRows;
 
     if (!finalRows.length) {
-      statusDiv.textContent = '⚠ No valid rows found.';
+      statusDiv.textContent = '⚠ No valid rows found. Check format.';
       return;
     }
 
     document.getElementById('previewArea').style.display = 'block';
     document.getElementById('previewCount').textContent = finalRows.length;
     
-    // Preview table render karein (Cost column ke sath)
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
       <tr>
         <td>${r.subInv}</td>
@@ -107,13 +130,16 @@ window.handlePDF = async function(event) {
     statusDiv.className = 'pdf-status success';
 
   } catch (err) {
-    console.error(err);
     statusDiv.textContent = '❌ Error: ' + err.message;
     statusDiv.className = 'pdf-status error';
   }
 };
 
-function processLineWords(words, item, isSlowMoving = false) {
+// ==========================================
+// 1. NORMAL INVENTORY PARSER (Work in Process)
+// Format: 200 | P02-... | CM0392... | Desc | UOM | 14.00 | 0.00 | 0.00 | 14.00
+// ==========================================
+function processNormalInventory(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
   let uomIndex = -1;
@@ -123,42 +149,62 @@ function processLineWords(words, item, isSlowMoving = false) {
   }
 
   if (uomIndex !== -1) {
+    // UOM mil gaya, iske pehle Description hai
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    // Description se code aur sub-inv hata dein
-    descWords = descWords.filter(t => t !== item.code && !t.includes(item.subInv) && !t.startsWith('P02-'));
+    descWords = descWords.filter(t => t !== item.code && !t.startsWith('P02-'));
     item.desc = descWords.join(' ');
     
+    // UOM ke baad sirf numbers hain, aakhri number Closing Qty hai
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-
-    if (isSlowMoving) {
-      // Slow Moving format: Stock Qty, Rate, Value, Days...
-      // Aam tor par pehla number Stock hota hai, dusra Rate (Cost)
-      if (nums.length >= 2) {
-        item.qty = nums[0]; 
-        item.cost = nums[1]; 
-      } else if (nums.length === 1) {
-        item.qty = nums[0];
-      }
-    } else {
-      // Normal Inventory format: Opening, Received, Issued, Closing
-      if (nums.length > 0) item.qty = nums[nums.length - 1]; // Closing qty
-    }
+    if (nums.length > 0) item.qty = nums[nums.length - 1];
   } else {
-    // Agar line mein UOM nahi hai, toh ye description ki continuation hai
-    let extraDesc = words.filter(w => 
-      !numRegex.test(w.text) && 
-      w.text !== item.code && 
-      !w.text.includes(item.subInv) &&
-      !w.text.startsWith('P02-')
-    ).map(w => w.text).join(' ');
-    
-    if (extraDesc.trim()) item.desc += ' ' + extraDesc;
+    // Agar UOM nahi hai line mein, toh ye description ki continuation hai
+    let extra = words.filter(w => !numRegex.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.startsWith('P02-')).map(w => w.text).join(' ');
+    if (extra.trim()) item.desc += ' ' + extra;
   }
 }
 
+// ==========================================
+// 2. SLOW MOVING PARSER
+// Format: FG1060... | Desc | NOS | Stock | Rate | Value ...
+// ==========================================
+function processSlowMoving(words, item) {
+  const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
+  const numRegex = /^[\d,]+\.?\d*$/;
+  let uomIndex = -1;
+  
+  for (let i = 0; i < words.length; i++) {
+    if (uomRegex.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
+  }
+
+  if (uomIndex !== -1) {
+    // Description UOM se pehle hoti hai
+    let descWords = words.slice(0, uomIndex).map(w => w.text);
+    descWords = descWords.filter(t => t !== item.code);
+    item.desc = descWords.join(' ');
+    
+    // UOM ke baad numbers: Stock Qty (pehla), Rate (dusra)
+    const nums = [];
+    for (let i = uomIndex + 1; i < words.length; i++) {
+      if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+    }
+    
+    // Slow moving mein pehle 2 numbers Stock aur Rate hote hain
+    if (nums.length >= 1) item.qty = nums[0]; 
+    if (nums.length >= 2) item.cost = nums[1];
+  } else {
+    // Agar UOM nahi mila, toh description continuation hai (jese 2 line wali desc)
+    let extra = words.filter(w => !numRegex.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
+    if (extra.trim()) item.desc += ' ' + extra;
+  }
+}
+
+// ==========================================
+// SAVE TO FIREBASE
+// ==========================================
 window.confirmImport = async function() {
   if (!window.importedRows.length) return;
 
@@ -167,13 +213,10 @@ window.confirmImport = async function() {
   btn.textContent = 'Importing...'; btn.disabled = true;
 
   try {
-    const shouldDeleteOld = document.getElementById('chkDeleteOld')?.checked;
-    
-    if (shouldDeleteOld) {
+    if (document.getElementById('chkDeleteOld')?.checked) {
       btn.textContent = 'Clearing old data...';
       const allData = await window.loadInventoryFromFirebase();
       for (const item of allData) {
-        // Sirf usi section ka data delete karein jo import ho raha hai
         if (item.source && item.source.includes(importType)) {
           await window.deleteItemFromFirebase(item.id || item.code);
         }
@@ -182,9 +225,7 @@ window.confirmImport = async function() {
 
     btn.textContent = 'Importing new data...';
     const itemsToSave = window.importedRows.map(row => ({ 
-      ...row, 
-      source: `PDF (${importType})`, 
-      updatedAt: new Date().toISOString() 
+      ...row, source: `PDF (${importType})`, updatedAt: new Date().toISOString() 
     }));
     
     const savedCount = await window.bulkSaveToFirebase(itemsToSave);
