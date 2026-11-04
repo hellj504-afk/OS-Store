@@ -1,7 +1,3 @@
-// ==========================================
-// APP.JS
-// ==========================================
-
 document.getElementById('nav').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
@@ -24,7 +20,7 @@ document.getElementById('nav').addEventListener('click', (e) => {
   if (targetPage === 'alerts' && window.renderAlerts) window.renderAlerts();
   if (targetPage === 'slow_moving' && window.renderSlowMoving) window.renderSlowMoving();
   
-  // Naye pages ke functions (Inko hum agle step mein banayenge)
+  // Naye pages ke functions call karein
   if (targetPage === 'bom' && window.renderBOM) window.renderBOM();
   if (targetPage === 'issue' && window.renderIssue) window.renderIssue();
   if (targetPage === 'ir' && window.renderIR) window.renderIR();
