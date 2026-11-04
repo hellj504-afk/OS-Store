@@ -125,19 +125,34 @@
             <button class="primary" onclick="openItemModal()">＋ Add Item</button>
           </div>
         </div>
+        
+        <!-- INVENTORY FILTERS ADDED HERE -->
         <div class="search-row">
           <div class="search">
             <span>⌕</span>
-            <input id="invSearch" placeholder="Search..." oninput="renderInventory()">
+            <input id="invSearch" placeholder="Search item code or description..." oninput="renderInventory()">
           </div>
+          <select class="filter" id="invFilterSubInv" onchange="renderInventory()">
+            <option value="all">All Sub Inventories</option>
+            <option value="001">001 - Finished Goods</option>
+            <option value="002">002 - Raw Material</option>
+            <option value="009">009 - OSP Material</option>
+            <option value="101">101 - PD Shipping</option>
+            <option value="102">102 - Pledge - Raw Material</option>
+            <option value="200">200 - Work in Process</option>
+            <option value="701">701 - Area Office PD, Karachi</option>
+            <option value="800">800 - Vendor</option>
+            <option value="999">999 - Staging</option>
+          </select>
         </div>
+
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Source</th><th>Action</th></tr>
+              <tr><th>Item Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Source</th><th>Action</th></tr>
             </thead>
             <tbody id="inventoryTable">
-              <tr><td colspan="6" class="empty">Loading from Firebase...</td></tr>
+              <tr><td colspan="7" class="empty">Loading from Firebase...</td></tr>
             </tbody>
           </table>
         </div>
@@ -157,40 +172,7 @@
           <label>1. Select Destination</label>
           <select id="importDest">
             <option value="inventory">Custom Inventory</option>
-            <option value="receiving">Material Receiving</option>
-            <option value="issuance">Material Issuance</option>
           </select>
-        </div>
-
-        <div class="form-grid" style="margin-bottom:16px">
-          <div class="field">
-            <label>2. Sub Inventory Filter (Optional)</label>
-            <select id="filterSubInv" class="filter">
-              <option value="all">All Sub Inventories</option>
-              <option value="001">001 - Finished Goods</option>
-              <option value="002">002 - Raw Material</option>
-              <option value="009">009 - OSP Material</option>
-              <option value="101">101 - PD Shipping</option>
-              <option value="102">102 - Pledge - Raw Material</option>
-              <option value="200">200 - Work in Process</option>
-              <option value="701">701 - Area Office PD, Karachi</option>
-              <option value="800">800 - Vendor</option>
-              <option value="999">999 - Staging</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>3. Inventory Group Filter (Optional)</label>
-            <select id="filterInvGroup" class="filter">
-              <option value="all">All Inventory Groups</option>
-              <option value="001">001 - Store</option>
-              <option value="002">002 - WIP</option>
-              <option value="003">003 - Vendor</option>
-              <option value="004">004 - Scrap</option>
-              <option value="005">005 - Maintenance</option>
-              <option value="006">006 - Mktg PD Office</option>
-              <option value="007">007 - CSD</option>
-            </select>
-          </div>
         </div>
 
         <div class="field" style="margin-bottom:16px">
@@ -217,7 +199,7 @@
           <div class="table-wrap" style="max-height:420px;overflow:auto">
             <table>
               <thead>
-                <tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr>
+                <tr><th>Sub Inv</th><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr>
               </thead>
               <tbody id="previewTable"></tbody>
             </table>
@@ -241,18 +223,22 @@
         <input id="fCode" placeholder="e.g. CM0392-00030-10-026">
       </div>
       <div class="field">
+        <label>Sub Inventory</label>
+        <input id="fSubInv" placeholder="e.g. 200">
+      </div>
+      <div class="field">
         <label>UOM</label>
         <input id="fUom" placeholder="NOS / KGS / MTR">
-      </div>
-      <div class="field full">
-        <label>Description</label>
-        <input id="fDesc" placeholder="Item description">
       </div>
       <div class="field">
         <label>Quantity</label>
         <input id="fQty" type="number" step="0.01" placeholder="0">
       </div>
-      <div class="field">
+      <div class="field full">
+        <label>Description</label>
+        <input id="fDesc" placeholder="Item description">
+      </div>
+      <div class="field full">
         <label>Source</label>
         <input id="fSource" placeholder="Manual / PDF Import" value="Manual">
       </div>
@@ -275,4 +261,4 @@
 <script src="js/app.js"></script>
 
 </body>
-  </html>
+</html>
