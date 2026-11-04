@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — 3-Step BOM Support
+// PDF-IMPORT.JS — FG is Parent, WIP is Child
 // ==========================================
 
 window.importedRows = [];
@@ -54,25 +54,27 @@ window.handlePDF = async function(event) {
         
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
-        // BOM / Assembly Logic
         if (importType.includes('bom') || importType.includes('assembly')) {
           if (codeWord) {
-             if (codeWord.text.startsWith('FG') || (codeWord.text.startsWith('WIP') && !lineText.match(/\b\d+(\.\d+)?\b/))) {
+             // === FIX: SIRF FG KO PARENT MAANA JAYEGA ===
+             if (codeWord.text.startsWith('FG')) {
                 currentParent = codeWord.text;
              } else {
+                // WIP, CM, RM, SS sab CHILD hain
                 let row = { subInv: 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
                 processBOMLine(line.words, row);
                 if(row.qty > 0) allRows.push(row);
              }
           } else if (currentParent !== 'N/A' && allRows.length > 0) {
+             // Description continuation for child
              const lastRow = allRows[allRows.length - 1];
              if (lastRow && lastRow.parent === currentParent) {
                 processBOMLine(line.words, lastRow);
              }
           }
         } 
-        // Normal Inventory Logic
         else {
+           // === NORMAL INVENTORY ===
            if (codeWord) {
              let subInv = 'N/A';
              const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
@@ -91,7 +93,6 @@ window.handlePDF = async function(event) {
       }
     }
 
-    // Merge Logic
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
@@ -136,7 +137,6 @@ window.handlePDF = async function(event) {
 
   } catch (err) {
     statusDiv.textContent = '❌ Error: ' + err.message;
-    statusDiv.className = 'pdf-status error';
   }
 };
 
