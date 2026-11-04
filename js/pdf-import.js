@@ -113,6 +113,7 @@ function processLineWords(words, item) {
 window.confirmImport = async function() {
   if (!window.importedRows.length) return;
 
+  const importType = document.getElementById('importType').value;
   const btn = document.querySelector('#previewArea .primary');
   btn.textContent = 'Importing...'; btn.disabled = true;
 
@@ -122,7 +123,7 @@ window.confirmImport = async function() {
       for (const item of allData) await window.deleteItemFromFirebase(item.id || item.code);
     }
 
-    const itemsToSave = window.importedRows.map(row => ({ ...row, source: 'PDF Import', updatedAt: new Date().toISOString() }));
+    const itemsToSave = window.importedRows.map(row => ({ ...row, source: `PDF (${importType})`, updatedAt: new Date().toISOString() }));
     const savedCount = await window.bulkSaveToFirebase(itemsToSave);
     
     showToast(`Imported ${savedCount} items!`, 'success');
