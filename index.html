@@ -245,20 +245,10 @@
 
 <!-- ============================================================
      SCRIPT LOADING ORDER (IMPORTANT!)
-     ============================================================
-     1. firebase-config.js  → Firebase init (type="module")
-     2. utils.js            → helpers
-     3. storage.js          → Firestore wrapper (type="module")
-     4. inventory.js        → CRUD functions
-     5. dashboard.js        → dashboard render
-     6. pdf-import.js       → PDF parser
-     7. app.js              → navigation + init (LAST)
      ============================================================ -->
-
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/storage.js"></script>
 
-<!-- Baaki scripts normal (non-module) — Firebase DB ko window par use karenge -->
 <script src="js/utils.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/dashboard.js"></script>
