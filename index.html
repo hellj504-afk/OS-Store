@@ -88,7 +88,7 @@
       </div>
     </section>
 
-    <!-- NEW: BOM PAGE -->
+    <!-- BOM PAGE -->
     <section id="page-bom" class="section-page">
       <div class="panel">
         <div class="panel-head"><div><h3>BOM Management</h3><div class="panel-sub">Parent & Child Items</div></div></div>
@@ -97,7 +97,7 @@
       </div>
     </section>
 
-    <!-- NEW: ISSUE VOUCHER PAGE -->
+    <!-- ISSUE VOUCHER PAGE -->
     <section id="page-issue" class="section-page">
       <div class="panel">
         <div class="panel-head"><div><h3>Issue Voucher</h3><div class="panel-sub">Material Issuance</div></div></div>
@@ -105,7 +105,7 @@
       </div>
     </section>
 
-    <!-- NEW: IR / MOVE ORDER PAGE -->
+    <!-- IR / MOVE ORDER PAGE -->
     <section id="page-ir" class="section-page">
       <div class="panel">
         <div class="panel-head"><div><h3>IR / Move Order</h3><div class="panel-sub">Material Requests</div></div></div>
@@ -113,11 +113,39 @@
       </div>
     </section>
 
-    <!-- NEW: FAILURE PAGE -->
+    <!-- FAILURE / SCRAP PAGE -->
     <section id="page-failure" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>Failure & Scrap</h3><div class="panel-sub">Damaged / Waste</div></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Failure Qty</th></tr></thead><tbody id="failureTable"><tr><td colspan="3" class="empty">No failure records.</td></tr></tbody></table></div>
+        <div class="panel-head">
+          <div><h3>Scrap / Failure Management</h3><div class="panel-sub">Enter FG Code and Qty to detect BOM materials</div></div>
+        </div>
+        
+        <div class="form-grid" style="margin-bottom:20px; background: rgba(255,255,255,0.4); padding:15px; border-radius:15px;">
+          <div class="field">
+            <label>FG Item Code (e.g. FG1060-...)</label>
+            <input id="failCode" placeholder="Enter FG Code">
+          </div>
+          <div class="field">
+            <label>Failure Quantity</label>
+            <input id="failQty" type="number" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field full" style="display:flex; justify-content:flex-end;">
+            <button class="primary" onclick="calculateFailure()">🔍 Detect Material & Cost</button>
+          </div>
+        </div>
+
+        <div id="failureResultArea" style="display:none; margin-top:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+             <h4 style="margin:0;">Required Materials (BOM)</h4>
+             <h4 style="margin:0; color:#c93a4d;">Total Cost: <span id="failTotalCost">Rs. 0</span></h4>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Component Code</th><th>Description</th><th>Required Qty</th><th>UOM</th><th>Unit Cost</th><th>Total Cost</th><th>Action</th></tr></thead>
+              <tbody id="failureResultTable"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -202,6 +230,7 @@
 <script src="js/inventory.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/pdf-import.js"></script>
+<script src="js/bom.js"></script>
 <script src="js/app.js"></script>
 </body>
-</html>
+                                                                                                                                                   </html>
