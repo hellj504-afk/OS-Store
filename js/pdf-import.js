@@ -1,7 +1,3 @@
-// ==========================================
-// PDF-IMPORT.JS — Advanced Coordinate-Based Parser
-// ==========================================
-
 window.importedRows = [];
 
 if (typeof pdfjsLib !== 'undefined') {
@@ -22,29 +18,21 @@ window.handlePDF = async function(event) {
   try {
     const buf = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-    
     let allRows = [];
-    const selectedSubInv = document.getElementById('filterSubInv')?.value || 'all';
 
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
       const words = content.items.map(it => ({
-        text: it.str.trim(),
-        x: it.transform[4],
-        y: it.transform[5],
-        width: it.width
+        text: it.str.trim(), x: it.transform[4], y: it.transform[5]
       })).filter(w => w.text !== '');
 
       const lines = [];
       words.forEach(word => {
         let line = lines.find(l => Math.abs(l.y - word.y) < 5);
-        if (line) {
-          line.words.push(word);
-        } else {
-          lines.push({ y: word.y, words: [word] });
-        }
+        if (line) line.words.push(word);
+        else lines.push({ y: word.y, words: [word] });
       });
 
       lines.sort((a, b) => b.y - a.y);
@@ -58,12 +46,13 @@ window.handlePDF = async function(event) {
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        const subInvWord = line.words.find(w => w.x < 80 && /^\d{3}$/.test(w.text));
+        // Sub Inv usually X < 80 (e.g. 200, 001)
+        const subInvWord = line.words.find(w => w.x < 100 && /^\d{3}$/.test(w.text));
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (codeWord) {
           currentItem = {
-            subInv: subInvWord ? subInvWord.text : '',
+            subInv: subInvWord ? subInvWord.text : 'N/A',
             code: codeWord.text,
             desc: '',
             uom: 'NOS',
@@ -77,14 +66,9 @@ window.handlePDF = async function(event) {
       }
     }
 
-    let filteredRows = allRows;
-    if (selectedSubInv !== 'all') {
-      filteredRows = filteredRows.filter(r => r.subInv === selectedSubInv);
-    }
-    
-    // Deduplicate for preview (combine qty if same code appears)
+    // Deduplicate & Merge Qty for same code
     const map = {};
-    filteredRows.forEach(r => { 
+    allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       if(r.desc.endsWith(r.uom)) r.desc = r.desc.slice(0, -r.uom.length).trim();
       
@@ -99,7 +83,7 @@ window.handlePDF = async function(event) {
     window.importedRows = finalRows;
 
     if (!finalRows.length) {
-      statusDiv.textContent = '⚠ No valid rows found. Check PDF or Filter options.';
+      statusDiv.textContent = '⚠ No valid rows found.';
       statusDiv.className = 'pdf-status error';
       return;
     }
@@ -109,6 +93,7 @@ window.handlePDF = async function(event) {
     
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
       <tr>
+        <td>${r.subInv}</td>
         <td class="code">${r.code}</td>
         <td>${r.desc}</td>
         <td>${r.uom}</td>
@@ -141,10 +126,19 @@ function processLineWords(words, item) {
   }
 
   if (uomIndex !== -1) {
+    // UOM se pehle ke words = Description
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    descWords = descWords.filter(t => t !== item.code && !/^\d{3}$/.test(t) && !t.startsWith('P02-'));
+    
+    // Yahan hum '200' (SubInv) aur Item Code ko Description se nikal rahe hain
+    descWords = descWords.filter(t => 
+      t !== item.code && 
+      t !== item.subInv && // Sub Inv remove
+      !t.startsWith('P02-') 
+    );
+    
     item.desc = descWords.join(' ');
     
+    // UOM ke baad ke numbers
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) {
@@ -152,27 +146,23 @@ function processLineWords(words, item) {
       }
     }
     if (nums.length > 0) {
-      item.qty = nums[nums.length - 1];
+      item.qty = nums[nums.length - 1]; // Last is Closing
     }
   } else {
+    // Description continuation
     let extraDesc = words.filter(w => 
       !numRegex.test(w.text) && 
       w.text !== item.code && 
-      !/^\d{3}$/.test(w.text) &&
+      w.text !== item.subInv && 
       !w.text.startsWith('P02-')
     ).map(w => w.text).join(' ');
     
-    if (extraDesc.trim()) {
-      item.desc += ' ' + extraDesc;
-    }
+    if (extraDesc.trim()) item.desc += ' ' + extraDesc;
   }
 }
 
 window.confirmImport = async function() {
-  if (!window.importedRows.length) {
-    showToast('Nothing to import', 'error');
-    return;
-  }
+  if (!window.importedRows.length) return;
 
   const dest = document.getElementById('importDest').value;
   const btn = document.querySelector('#previewArea .primary');
@@ -182,7 +172,6 @@ window.confirmImport = async function() {
   btn.disabled = true;
 
   try {
-    // === AUTO DELETE PURANA DATA ===
     const shouldDeleteOld = document.getElementById('chkDeleteOld')?.checked;
     if (shouldDeleteOld) {
       btn.textContent = 'Clearing old data...';
@@ -195,9 +184,7 @@ window.confirmImport = async function() {
     btn.textContent = 'Importing new data...';
     
     const itemsToSave = window.importedRows.map(row => ({
-      ...row,
-      source: `PDF (${dest})`,
-      updatedAt: new Date().toISOString()
+      ...row, source: `PDF (${dest})`, updatedAt: new Date().toISOString()
     }));
 
     const savedCount = await window.bulkSaveToFirebase(itemsToSave);
@@ -211,7 +198,6 @@ window.confirmImport = async function() {
     await refreshInventoryData();
 
   } catch (err) {
-    console.error(err);
     showToast('Import failed: ' + err.message, 'error');
   } finally {
     btn.textContent = originalText;
