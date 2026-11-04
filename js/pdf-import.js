@@ -1,8 +1,8 @@
 // ==========================================
-// PDF-IMPORT.JS — With BOM Parser
+// PDF-IMPORT.JS — Master Logic (Inventory + BOM)
 // ==========================================
 
-window.importedRows = []; // For Inventory
+window.importedRows = [];
 
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -29,6 +29,7 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
+      // Text to String
       const words = content.items.map(it => {
         return { text: String(it.str || '').trim(), x: it.transform[4], y: it.transform[5] };
       }).filter(w => w.text !== '');
@@ -44,58 +45,74 @@ window.handlePDF = async function(event) {
       lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
 
       let currentItem = null;
-      let currentParent = null; // BOM ke liye
+      let currentParent = 'N/A'; // BOM logic track
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const lineText = line.words.map(w => w.text).join(' ');
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
+        
+        const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
-        // Agar BOM hai
+        // ==========================================
+        // SIRF BOM KE LIYE (Parent-Child Logic)
+        // ==========================================
         if (importType.includes('bom')) {
-           // BOM logic: Find Parent Header or Child Item
-           // Aapke BOM PDF mein Parent Code (FG...) lines mein alag se aata hai.
-           // Abhi ke liye hum saare codes utha rahe hain (child).
-           const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
+          if (codeWord) {
+             // Agar FG ya WIP se shuru ho, toh Parent maane
+             if (codeWord.text.startsWith('FG') || codeWord.text.startsWith('WIP') || lineText.includes('Final Assembly') || lineText.includes('Pre Assembly')) {
+                currentParent = codeWord.text;
+                let row = { subInv: 'N/A', code: currentParent, desc: '', uom: 'NOS', qty: 1, cost: 0, parent: 'N/A' };
+                processBOMLine(line.words, row);
+                allRows.push(row);
+             } else {
+                // Warna Child maane
+                let row = { subInv: 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
+                processBOMLine(line.words, row);
+                if(row.qty > 0) allRows.push(row);
+             }
+          } else if (currentParent !== 'N/A') {
+             // Description continuation for BOM
+             const lastRow = allRows[allRows.length - 1];
+             if (lastRow) processBOMLine(line.words, lastRow);
+          }
+        } 
+        // ==========================================
+        // NORMAL INVENTORY / SLOW MOVING (Purana Logic)
+        // ==========================================
+        else {
            if (codeWord) {
-             // BOM mein Component Code, Desc, UOM, Qty hoti hai
-             let row = { code: codeWord.text, desc: '', uom: 'NOS', qty: 0 };
-             processBOMLine(line.words, row);
-             if(row.qty > 0) allRows.push(row);
-           }
-        } else {
-           // Normal Inventory logic
-           const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
-           if (codeWord) {
-              let subInv = 'N/A';
-              const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
-              if (subWord) subInv = subWord.text.replace("'", "");
+             let subInv = 'N/A';
+             const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
+             if (subWord) subInv = subWord.text.replace("'", "");
 
-              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
-              allRows.push(currentItem);
-              
-              if (importType === 'slow_moving') processSlowMoving(line.words, currentItem);
-              else processNormalInventory(line.words, currentItem);
+             currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
+             allRows.push(currentItem);
+             
+             if (importType === 'slow_moving') processSlowMoving(line.words, currentItem);
+             else processNormalInventory(line.words, currentItem);
            } else if (currentItem) {
-              if (importType === 'slow_moving') processSlowMoving(line.words, currentItem);
-              else processNormalInventory(line.words, currentItem);
+             if (importType === 'slow_moving') processSlowMoving(line.words, currentItem);
+             else processNormalInventory(line.words, currentItem);
            }
         }
       }
     }
 
-    // Filter and Merge
+    // Merge aur Filter Logic
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       
+      // Sub Inv auto detect for normal inventory
       if (!importType.includes('bom') && r.subInv === 'N/A') {
         const match = r.desc.match(/^'?(\d{3})\s+(.*)/);
         if (match) { r.subInv = match[1]; r.desc = match[2]; }
       }
 
-      const key = r.code + (r.subInv && r.subInv !== 'N/A' ? '_' + r.subInv : '');
+      const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
+      
       if (map[key]) {
         map[key].qty += r.qty;
         if (r.cost > 0) map[key].cost = r.cost;
@@ -108,7 +125,7 @@ window.handlePDF = async function(event) {
     window.importedRows = finalRows;
 
     if (!finalRows.length) {
-      statusDiv.textContent = '⚠ No valid rows found. Check format.';
+      statusDiv.textContent = '⚠ No valid rows found.';
       return;
     }
 
@@ -117,7 +134,7 @@ window.handlePDF = async function(event) {
     
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
       <tr>
-        <td>${r.subInv || '-'}</td>
+        <td>${r.subInv}</td>
         <td class="code">${r.code}</td>
         <td>${r.desc}</td>
         <td>${r.uom}</td>
@@ -130,13 +147,14 @@ window.handlePDF = async function(event) {
     statusDiv.className = 'pdf-status success';
 
   } catch (err) {
+    console.error(err);
     statusDiv.textContent = '❌ Error: ' + err.message;
     statusDiv.className = 'pdf-status error';
   }
 };
 
 // ==========================================
-// BOM PARSER (Pre, Final, BOM Detail)
+// BOM PARSER
 // ==========================================
 function processBOMLine(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
@@ -149,16 +167,17 @@ function processBOMLine(words, item) {
 
   if (uomIndex !== -1) {
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    // Description se pehla number (Seq) aur code hata dein
     descWords = descWords.filter(t => !numRegex.test(t) && String(t) !== String(item.code));
     item.desc = descWords.join(' ');
     
-    // BOM mein UOM ke baad pehla number Net Qty hota hai
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    if (nums.length > 0) item.qty = nums[0]; // Net Qty
+    if (nums.length > 0) item.qty = nums[0];
+  } else {
+    let extra = words.filter(w => !numRegex.test(w.text) && String(w.text) !== String(item.code)).map(w => w.text).join(' ');
+    if (extra.trim()) item.desc += ' ' + extra;
   }
 }
 
@@ -221,7 +240,7 @@ function processSlowMoving(words, item) {
 }
 
 // ==========================================
-// IMPORT TO FIREBASE
+// SAVE IMPORT
 // ==========================================
 window.confirmImport = async function() {
   if (!window.importedRows.length) return;
