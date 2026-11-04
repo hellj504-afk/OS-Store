@@ -1,7 +1,3 @@
-// ==========================================
-// APP.JS — Main controller & initialization
-// ==========================================
-
 document.getElementById('nav').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
@@ -11,49 +7,30 @@ document.getElementById('nav').addEventListener('click', (e) => {
   document.querySelectorAll('.section-page').forEach(x => x.classList.remove('active'));
 
   const targetPage = btn.dataset.page;
-  const pageEl = document.getElementById('page-' + targetPage);
-  if (pageEl) pageEl.classList.add('active');
+  document.getElementById('page-' + targetPage).classList.add('active');
 
-  const titles = {
-    dashboard: 'Dashboard',
-    inventory: 'Custom Inventory',
-    alerts: 'Low Stock Alerts',
-    pdf: 'PDF Import Center'
-  };
+  const titles = { dashboard: 'Dashboard', inventory: 'Custom Inventory', slow_moving: 'Slow Moving', alerts: 'Low Stock Alerts', pdf: 'PDF Import Center' };
   document.getElementById('headerTitle').textContent = titles[targetPage] || 'Dashboard';
 
-  // Agar Alerts page khula hai, toh alert table render karein
-  if (targetPage === 'alerts' && window.renderAlerts) {
-    window.renderAlerts();
-  }
+  if (targetPage === 'alerts') window.renderAlerts();
+  if (targetPage === 'slow_moving') window.renderSlowMoving();
 });
 
 window.showPage = function(pageName) {
-  const btn = document.querySelector(`.nav button[data-page="${pageName}"]`);
-  if (btn) btn.click();
+  document.querySelector(`.nav button[data-page="${pageName}"]`).click();
 };
 
 window.addEventListener('firebaseReady', async () => {
   setTimeout(async () => {
-    if (typeof window.refreshInventoryData === 'function') {
-      await window.refreshInventoryData();
-    }
+    if (typeof window.refreshInventoryData === 'function') await window.refreshInventoryData();
   }, 500);
 });
 
-setTimeout(() => {
-  if (!window.isDataLoaded && typeof window.refreshInventoryData === 'function') {
-    window.refreshInventoryData();
-  }
-}, 3000);
+setTimeout(() => { if (!window.isDataLoaded && window.refreshInventoryData) window.refreshInventoryData(); }, 3000);
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const modal = document.getElementById('itemModal');
-    if (modal && modal.classList.contains('open')) window.closeItemModal();
-  }
+  if (e.key === 'Escape' && document.getElementById('itemModal').classList.contains('open')) window.closeItemModal();
 });
-
 document.getElementById('itemModal').addEventListener('click', (e) => {
   if (e.target.id === 'itemModal') window.closeItemModal();
 });
