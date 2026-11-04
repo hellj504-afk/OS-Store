@@ -12,15 +12,11 @@
 <body>
 
 <div class="bg-canvas">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-  <div class="blob blob-4"></div>
+  <div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div><div class="blob blob-4"></div>
   <div class="bg-grid"></div>
 </div>
 
 <div class="shell">
-
   <aside class="sidebar">
     <div class="brand">
       <div class="logo">◈</div>
@@ -38,22 +34,13 @@
       <button data-page="alerts"><span class="ico">⚠</span> Low Stock Alerts</button>
       <button data-page="pdf"><span class="ico">▤</span> PDF Import</button>
     </nav>
-    <div class="side-bottom">
-      <strong>✧ Cloud workspace</strong>Data is synced to Firebase. Accessible from any device.
-    </div>
+    <div class="side-bottom"><strong>✧ Cloud workspace</strong>Data is synced to Firebase.</div>
   </aside>
 
   <main>
-
     <header class="topbar">
-      <div>
-        <div class="eyebrow">STORE OPERATIONS / OVERVIEW</div>
-        <h1 id="headerTitle">Dashboard</h1>
-      </div>
-      <div class="top-actions">
-        <div class="date-pill" id="todayDate">—</div>
-        <div class="avatar">S</div>
-      </div>
+      <div><div class="eyebrow">STORE OPERATIONS / OVERVIEW</div><h1 id="headerTitle">Dashboard</h1></div>
+      <div class="top-actions"><div class="date-pill" id="todayDate">—</div><div class="avatar">S</div></div>
     </header>
 
     <!-- DASHBOARD -->
@@ -73,10 +60,7 @@
     <!-- INVENTORY -->
     <section id="page-inventory" class="section-page">
       <div class="panel">
-        <div class="panel-head">
-          <div><h3>Custom Inventory</h3></div>
-          <div><button class="danger" onclick="clearSection('inventory')">Clear All</button></div>
-        </div>
+        <div class="panel-head"><div><h3>Custom Inventory</h3></div><div><button class="danger" onclick="clearSection('inventory')">Clear All</button></div></div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
       </div>
     </section>
@@ -94,7 +78,7 @@
       <div class="panel">
         <div class="panel-head"><div><h3>BOM Management</h3></div></div>
         <div class="search-row">
-          <div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div>
+          <div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search FG or Component..." oninput="renderBOM()"></div>
           <select class="filter" id="bomFilterType" onchange="renderBOM()">
             <option value="all">All BOM Types</option>
             <option value="pre_assembly">Pre Assembly</option>
@@ -102,7 +86,12 @@
             <option value="bom">BOM Detail</option>
           </select>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Type</th><th>Parent</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>BOM Type</th><th>Parent (FG)</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead>
+            <tbody id="bomTable"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -157,7 +146,7 @@
           <div class="field">
             <label>1. Select PDF Type</label>
             <select id="importType">
-              <option value="inventory">Inventory</option>
+              <option value="inventory">Inventory (Subinventory)</option>
               <option value="slow_moving">Slow Moving Inventory</option>
               <option value="pre_assembly">Pre Assembly BOM</option>
               <option value="final_assembly">Final Assembly BOM</option>
@@ -185,11 +174,9 @@
         </div>
       </div>
     </section>
-
   </main>
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="itemModal">
   <div class="modal-card">
     <div class="modal-head"><h3>Add / Edit Item</h3><button class="close" onclick="closeItemModal()">×</button></div>
@@ -216,4 +203,4 @@
 <script src="js/bom.js"></script>
 <script src="js/app.js"></script>
 </body>
-      </html>
+              </html>
