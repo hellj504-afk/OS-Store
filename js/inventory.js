@@ -1,3 +1,7 @@
+// ==========================================
+// INVENTORY.JS
+// ==========================================
+
 window.inventoryData = [];
 window.isDataLoaded = false;
 
@@ -71,9 +75,11 @@ window.refreshInventoryData = async function() {
   const data = await window.loadInventoryFromFirebase();
   window.inventoryData = data;
   window.isDataLoaded = true;
+  
   renderInventory();
   if (window.renderDashboardTable) renderDashboardTable();
   if (window.updateDashboardStats) updateDashboardStats();
+  if (window.renderAlerts) renderAlerts(); // Refresh alerts if on that page
 };
 
 window.renderInventory = function() {
@@ -85,6 +91,7 @@ window.renderInventory = function() {
   const query = searchInput ? searchInput.value.toLowerCase() : '';
   const subInvFilter = filterSubInv ? filterSubInv.value : 'all';
 
+  // MERGE LOGIC
   const mergedData = {};
   window.inventoryData.forEach(item => {
     const key = item.code + '_' + (item.subInv || 'N/A'); 
@@ -119,4 +126,72 @@ window.renderInventory = function() {
       <td><button class="danger" onclick="deleteItem('${item.code}')">Delete</button></td>
     </tr>
   `).join('');
+};
+
+// ==========================================
+// NAYA: LOW STOCK ALERTS LOGIC (RED TAGS)
+// ==========================================
+window.renderAlerts = function() {
+  const tbody = document.getElementById('alertTable');
+  if (!tbody) return;
+
+  // Pehle data merge karein (sare subinvs mila kar)
+  const mergedData = {};
+  window.inventoryData.forEach(item => {
+    if (mergedData[item.code]) {
+      mergedData[item.code].qty += Number(item.qty) || 0;
+    } else {
+      mergedData[item.code] = { ...item, qty: Number(item.qty) || 0 };
+    }
+  });
+
+  let alerts = [];
+  
+  Object.values(mergedData).forEach(item => {
+    const qty = Number(item.qty);
+    const uom = (item.uom || '').toUpperCase();
+    let isAlert = false;
+    let statusText = '';
+
+    // Rules Check
+    if (qty <= 0) {
+      isAlert = true;
+      statusText = 'OUT OF STOCK';
+    } else if (uom === 'NOS' && qty < 500) {
+      isAlert = true;
+      statusText = 'LOW (NOS < 500)';
+    } else if (uom === 'KGS' && qty < 100) {
+      isAlert = true;
+      statusText = 'LOW (KGS < 100)';
+    }
+
+    if (isAlert) {
+      alerts.push({ ...item, statusText });
+    }
+  });
+
+  // Sort by lowest qty first
+  alerts.sort((a, b) => a.qty - b.qty);
+
+  if (alerts.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty" style="color:#19835a;">All stock levels are healthy! No alerts.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = alerts.map(item => {
+    // Agar zero hai to dark red, warna light red
+    const isZero = item.qty <= 0;
+    const rowStyle = isZero ? 'background: rgba(201, 58, 77, 0.15);' : 'background: rgba(255, 100, 100, 0.08);';
+    const badgeClass = isZero ? 'danger' : 'low';
+
+    return `
+      <tr style="${rowStyle}">
+        <td class="code" style="color:#c93a4d; font-weight:bold;">${item.code}</td>
+        <td>${item.desc || '-'}</td>
+        <td>${item.uom || 'NOS'}</td>
+        <td style="font-weight:bold; font-size:14px; color:#c93a4d;">${formatNumber(item.qty)}</td>
+        <td><span class="badge ${badgeClass}" style="background:#c93a4d; color:white; padding:5px 10px;">${item.statusText}</span></td>
+      </tr>
+    `;
+  }).join('');
 };
