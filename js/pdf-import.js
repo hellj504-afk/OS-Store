@@ -11,7 +11,7 @@ window.handlePDF = async function(event) {
   const statusDiv = document.getElementById('pdfStatus');
   const previewArea = document.getElementById('previewArea');
   
-  statusDiv.textContent = '⏳ Reading PDF structure... Please wait.';
+  statusDiv.textContent = '⏳ Reading PDF...';
   statusDiv.className = 'pdf-status';
   previewArea.style.display = 'none';
 
@@ -24,10 +24,7 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      const words = content.items.map(it => ({
-        text: it.str.trim(), x: it.transform[4], y: it.transform[5]
-      })).filter(w => w.text !== '');
-
+      const words = content.items.map(it => ({ text: it.str.trim(), x: it.transform[4], y: it.transform[5] })).filter(w => w.text !== '');
       const lines = [];
       words.forEach(word => {
         let line = lines.find(l => Math.abs(l.y - word.y) < 5);
@@ -43,21 +40,13 @@ window.handlePDF = async function(event) {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const lineText = line.words.map(w => w.text).join(' ');
-        
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        // Sub Inv usually X < 80 (e.g. 200, 001)
         const subInvWord = line.words.find(w => w.x < 100 && /^\d{3}$/.test(w.text));
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (codeWord) {
-          currentItem = {
-            subInv: subInvWord ? subInvWord.text : 'N/A',
-            code: codeWord.text,
-            desc: '',
-            uom: 'NOS',
-            qty: 0
-          };
+          currentItem = { subInv: subInvWord ? subInvWord.text : 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0 };
           allRows.push(currentItem);
           processLineWords(line.words, currentItem);
         } else if (currentItem) {
@@ -66,17 +55,11 @@ window.handlePDF = async function(event) {
       }
     }
 
-    // Deduplicate & Merge Qty for same code
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
-      if(r.desc.endsWith(r.uom)) r.desc = r.desc.slice(0, -r.uom.length).trim();
-      
-      if (map[r.code]) {
-         map[r.code].qty += r.qty;
-      } else {
-         map[r.code] = r; 
-      }
+      if (map[r.code]) map[r.code].qty += r.qty;
+      else map[r.code] = r; 
     });
     
     const finalRows = Object.values(map);
@@ -84,28 +67,19 @@ window.handlePDF = async function(event) {
 
     if (!finalRows.length) {
       statusDiv.textContent = '⚠ No valid rows found.';
-      statusDiv.className = 'pdf-status error';
       return;
     }
 
     document.getElementById('previewArea').style.display = 'block';
     document.getElementById('previewCount').textContent = finalRows.length;
-    
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
-      <tr>
-        <td>${r.subInv}</td>
-        <td class="code">${r.code}</td>
-        <td>${r.desc}</td>
-        <td>${r.uom}</td>
-        <td>${formatNumber(r.qty)}</td>
-      </tr>
+      <tr><td>${r.subInv}</td><td class="code">${r.code}</td><td>${r.desc}</td><td>${r.uom}</td><td>${formatNumber(r.qty)}</td></tr>
     `).join('');
 
-    statusDiv.textContent = `✓ Extracted ${finalRows.length} rows. Review and click Import.`;
+    statusDiv.textContent = `✓ Extracted ${finalRows.length} rows.`;
     statusDiv.className = 'pdf-status success';
 
   } catch (err) {
-    console.error(err);
     statusDiv.textContent = '❌ Error: ' + err.message;
     statusDiv.className = 'pdf-status error';
   }
@@ -114,49 +88,24 @@ window.handlePDF = async function(event) {
 function processLineWords(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
-  
   let uomIndex = -1;
   
   for (let i = 0; i < words.length; i++) {
-    if (uomRegex.test(words[i].text)) {
-      uomIndex = i;
-      item.uom = words[i].text.toUpperCase();
-      break;
-    }
+    if (uomRegex.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
   }
 
   if (uomIndex !== -1) {
-    // UOM se pehle ke words = Description
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    
-    // Yahan hum '200' (SubInv) aur Item Code ko Description se nikal rahe hain
-    descWords = descWords.filter(t => 
-      t !== item.code && 
-      t !== item.subInv && // Sub Inv remove
-      !t.startsWith('P02-') 
-    );
-    
+    descWords = descWords.filter(t => t !== item.code && t !== item.subInv && !t.startsWith('P02-'));
     item.desc = descWords.join(' ');
     
-    // UOM ke baad ke numbers
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
-      if (numRegex.test(words[i].text)) {
-        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-      }
+      if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    if (nums.length > 0) {
-      item.qty = nums[nums.length - 1]; // Last is Closing
-    }
+    if (nums.length > 0) item.qty = nums[nums.length - 1];
   } else {
-    // Description continuation
-    let extraDesc = words.filter(w => 
-      !numRegex.test(w.text) && 
-      w.text !== item.code && 
-      w.text !== item.subInv && 
-      !w.text.startsWith('P02-')
-    ).map(w => w.text).join(' ');
-    
+    let extraDesc = words.filter(w => !numRegex.test(w.text) && w.text !== item.code && w.text !== item.subInv && !w.text.startsWith('P02-')).map(w => w.text).join(' ');
     if (extraDesc.trim()) item.desc += ' ' + extraDesc;
   }
 }
@@ -164,43 +113,26 @@ function processLineWords(words, item) {
 window.confirmImport = async function() {
   if (!window.importedRows.length) return;
 
-  const dest = document.getElementById('importDest').value;
   const btn = document.querySelector('#previewArea .primary');
-  const originalText = btn.textContent;
-  
-  btn.textContent = 'Importing...';
-  btn.disabled = true;
+  btn.textContent = 'Importing...'; btn.disabled = true;
 
   try {
-    const shouldDeleteOld = document.getElementById('chkDeleteOld')?.checked;
-    if (shouldDeleteOld) {
-      btn.textContent = 'Clearing old data...';
+    if (document.getElementById('chkDeleteOld')?.checked) {
       const allData = await window.loadInventoryFromFirebase();
-      for (const item of allData) {
-        await window.deleteItemFromFirebase(item.id || item.code);
-      }
+      for (const item of allData) await window.deleteItemFromFirebase(item.id || item.code);
     }
 
-    btn.textContent = 'Importing new data...';
-    
-    const itemsToSave = window.importedRows.map(row => ({
-      ...row, source: `PDF (${dest})`, updatedAt: new Date().toISOString()
-    }));
-
+    const itemsToSave = window.importedRows.map(row => ({ ...row, source: 'PDF Import', updatedAt: new Date().toISOString() }));
     const savedCount = await window.bulkSaveToFirebase(itemsToSave);
-    showToast(`Successfully imported ${savedCount} items!`, 'success');
     
+    showToast(`Imported ${savedCount} items!`, 'success');
     document.getElementById('previewArea').style.display = 'none';
     document.getElementById('pdfStatus').textContent = `✓ Import complete: ${savedCount} rows saved.`;
-    document.getElementById('pdfStatus').className = 'pdf-status success';
     document.getElementById('pdfFile').value = ''; 
-    
     await refreshInventoryData();
-
   } catch (err) {
     showToast('Import failed: ' + err.message, 'error');
   } finally {
-    btn.textContent = originalText;
-    btn.disabled = false;
+    btn.textContent = '✓ Import Now'; btn.disabled = false;
   }
 };
