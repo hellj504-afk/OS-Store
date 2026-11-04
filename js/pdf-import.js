@@ -1,3 +1,7 @@
+// ==========================================
+// PDF-IMPORT.JS — Complete Parser (Slow Moving & Inventory)
+// ==========================================
+
 window.importedRows = [];
 
 if (typeof pdfjsLib !== 'undefined') {
@@ -10,6 +14,7 @@ window.handlePDF = async function(event) {
 
   const statusDiv = document.getElementById('pdfStatus');
   const previewArea = document.getElementById('previewArea');
+  const importType = document.getElementById('importType').value; // Check karein konsi PDF hai
   
   statusDiv.textContent = '⏳ Reading PDF...';
   statusDiv.className = 'pdf-status';
@@ -40,26 +45,39 @@ window.handlePDF = async function(event) {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const lineText = line.words.map(w => w.text).join(' ');
+        
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        const subInvWord = line.words.find(w => w.x < 100 && /^\d{3}$/.test(w.text));
+        // Item Code dhoondein (CM, RM, FG, WIP etc)
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (codeWord) {
-          currentItem = { subInv: subInvWord ? subInvWord.text : 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0 };
+          // Sub Inv dhoondein (agar ho toh)
+          let subInv = 'N/A';
+          const subInvWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
+          if (subInvWord) subInv = subInvWord.text.replace("'", "");
+
+          currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
           allRows.push(currentItem);
-          processLineWords(line.words, currentItem);
+          
+          // Function call karein aur batayen ke Slow Moving hai ya Normal
+          processLineWords(line.words, currentItem, importType === 'slow_moving');
         } else if (currentItem) {
-          processLineWords(line.words, currentItem);
+          processLineWords(line.words, currentItem, importType === 'slow_moving');
         }
       }
     }
 
+    // Merge same item codes
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
-      if (map[r.code]) map[r.code].qty += r.qty;
-      else map[r.code] = r; 
+      if (map[r.code]) {
+        map[r.code].qty += r.qty;
+        if (r.cost > 0) map[r.code].cost = r.cost; // Latest cost update karein
+      } else {
+        map[r.code] = r; 
+      }
     });
     
     const finalRows = Object.values(map);
@@ -72,20 +90,30 @@ window.handlePDF = async function(event) {
 
     document.getElementById('previewArea').style.display = 'block';
     document.getElementById('previewCount').textContent = finalRows.length;
+    
+    // Preview table render karein (Cost column ke sath)
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
-      <tr><td>${r.subInv}</td><td class="code">${r.code}</td><td>${r.desc}</td><td>${r.uom}</td><td>${formatNumber(r.qty)}</td></tr>
+      <tr>
+        <td>${r.subInv}</td>
+        <td class="code">${r.code}</td>
+        <td>${r.desc}</td>
+        <td>${r.uom}</td>
+        <td>${formatNumber(r.qty)}</td>
+        <td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td>
+      </tr>
     `).join('');
 
     statusDiv.textContent = `✓ Extracted ${finalRows.length} rows.`;
     statusDiv.className = 'pdf-status success';
 
   } catch (err) {
+    console.error(err);
     statusDiv.textContent = '❌ Error: ' + err.message;
     statusDiv.className = 'pdf-status error';
   }
 };
 
-function processLineWords(words, item) {
+function processLineWords(words, item, isSlowMoving = false) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numRegex = /^[\d,]+\.?\d*$/;
   let uomIndex = -1;
@@ -96,16 +124,37 @@ function processLineWords(words, item) {
 
   if (uomIndex !== -1) {
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    descWords = descWords.filter(t => t !== item.code && t !== item.subInv && !t.startsWith('P02-'));
+    // Description se code aur sub-inv hata dein
+    descWords = descWords.filter(t => t !== item.code && !t.includes(item.subInv) && !t.startsWith('P02-'));
     item.desc = descWords.join(' ');
     
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    if (nums.length > 0) item.qty = nums[nums.length - 1];
+
+    if (isSlowMoving) {
+      // Slow Moving format: Stock Qty, Rate, Value, Days...
+      // Aam tor par pehla number Stock hota hai, dusra Rate (Cost)
+      if (nums.length >= 2) {
+        item.qty = nums[0]; 
+        item.cost = nums[1]; 
+      } else if (nums.length === 1) {
+        item.qty = nums[0];
+      }
+    } else {
+      // Normal Inventory format: Opening, Received, Issued, Closing
+      if (nums.length > 0) item.qty = nums[nums.length - 1]; // Closing qty
+    }
   } else {
-    let extraDesc = words.filter(w => !numRegex.test(w.text) && w.text !== item.code && w.text !== item.subInv && !w.text.startsWith('P02-')).map(w => w.text).join(' ');
+    // Agar line mein UOM nahi hai, toh ye description ki continuation hai
+    let extraDesc = words.filter(w => 
+      !numRegex.test(w.text) && 
+      w.text !== item.code && 
+      !w.text.includes(item.subInv) &&
+      !w.text.startsWith('P02-')
+    ).map(w => w.text).join(' ');
+    
     if (extraDesc.trim()) item.desc += ' ' + extraDesc;
   }
 }
@@ -118,18 +167,33 @@ window.confirmImport = async function() {
   btn.textContent = 'Importing...'; btn.disabled = true;
 
   try {
-    if (document.getElementById('chkDeleteOld')?.checked) {
+    const shouldDeleteOld = document.getElementById('chkDeleteOld')?.checked;
+    
+    if (shouldDeleteOld) {
+      btn.textContent = 'Clearing old data...';
       const allData = await window.loadInventoryFromFirebase();
-      for (const item of allData) await window.deleteItemFromFirebase(item.id || item.code);
+      for (const item of allData) {
+        // Sirf usi section ka data delete karein jo import ho raha hai
+        if (item.source && item.source.includes(importType)) {
+          await window.deleteItemFromFirebase(item.id || item.code);
+        }
+      }
     }
 
-    const itemsToSave = window.importedRows.map(row => ({ ...row, source: `PDF (${importType})`, updatedAt: new Date().toISOString() }));
-    const savedCount = await window.bulkSaveToFirebase(itemsToSave);
+    btn.textContent = 'Importing new data...';
+    const itemsToSave = window.importedRows.map(row => ({ 
+      ...row, 
+      source: `PDF (${importType})`, 
+      updatedAt: new Date().toISOString() 
+    }));
     
+    const savedCount = await window.bulkSaveToFirebase(itemsToSave);
     showToast(`Imported ${savedCount} items!`, 'success');
+    
     document.getElementById('previewArea').style.display = 'none';
     document.getElementById('pdfStatus').textContent = `✓ Import complete: ${savedCount} rows saved.`;
     document.getElementById('pdfFile').value = ''; 
+    
     await refreshInventoryData();
   } catch (err) {
     showToast('Import failed: ' + err.message, 'error');
