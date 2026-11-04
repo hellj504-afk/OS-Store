@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Final Safe Version
+// PDF-IMPORT.JS — Final Exact BOM Logic
 // ==========================================
 
 window.importedRows = [];
@@ -51,28 +51,37 @@ window.handlePDF = async function(event) {
         const lineText = line.words.map(function(w) { return w.text; }).join(' ');
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
-        
-        const codeWord = line.words.find(function(w) { return /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text); });
 
+        // BOM LOGIC
         if (importType.includes('bom') || importType.includes('assembly')) {
-          if (codeWord) {
-             // SIRF FG KO PARENT MAANA JAYEGA
-             if (codeWord.text.startsWith('FG')) {
-                currentParent = codeWord.text;
-             } else {
-                // WIP, CM, RM, SS sab CHILD hain
-                let row = { subInv: 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
-                processBOMLine(line.words, row);
-                if(row.qty > 0) allRows.push(row);
-             }
-          } else if (currentParent !== 'N/A' && allRows.length > 0) {
-             const lastRow = allRows[allRows.length - 1];
-             if (lastRow && lastRow.parent === currentParent) {
-                processBOMLine(line.words, lastRow);
-             }
-          }
+           
+           // Har line mein saare codes dhoondein
+           const codes = line.words.filter(function(w) { return /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text); });
+           
+           if (codes.length > 0) {
+              // Pehle check karein ke is line mein koi Parent (FG ya WIP) hai ya nahi
+              const parentCode = codes.find(function(c) { return c.text.startsWith('FG') || c.text.startsWith('WIP'); });
+              
+              if (parentCode) {
+                 currentParent = parentCode.text;
+              } else {
+                 // Agar sirf CM, RM, SS hain, toh ye Child hain
+                 const childCode = codes[0];
+                 let row = { subInv: 'N/A', code: childCode.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
+                 processBOMLine(line.words, row);
+                 if(row.qty > 0) allRows.push(row);
+              }
+           } else if (currentParent !== 'N/A' && allRows.length > 0) {
+              // Description continuation
+              const lastRow = allRows[allRows.length - 1];
+              if (lastRow && lastRow.parent === currentParent) {
+                 processBOMLine(line.words, lastRow);
+              }
+           }
         } 
+        // NORMAL INVENTORY LOGIC
         else {
+           const codeWord = line.words.find(function(w) { return /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text); });
            if (codeWord) {
              let subInv = 'N/A';
              const subWord = line.words.find(function(w) { return w.x < codeWord.x && /^'?\d{3}$/.test(w.text); });
