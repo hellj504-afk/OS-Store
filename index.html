@@ -14,10 +14,7 @@
 <body>
 
 <div class="bg-canvas">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-  <div class="blob blob-4"></div>
+  <div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div><div class="blob blob-4"></div>
   <div class="bg-grid"></div>
 </div>
 
@@ -33,6 +30,10 @@
       <button class="active" data-page="dashboard"><span class="ico">⌂</span> Dashboard</button>
       <button data-page="inventory"><span class="ico">▦</span> Custom Inventory</button>
       <button data-page="slow_moving"><span class="ico">◷</span> Slow Moving</button>
+      <button data-page="bom"><span class="ico">☷</span> BOM Management</button>
+      <button data-page="issue"><span class="ico">⇧</span> Issue Voucher</button>
+      <button data-page="ir"><span class="ico">⇩</span> IR / Move Order</button>
+      <button data-page="failure"><span class="ico">⚠</span> Failure & Scrap</button>
       <button data-page="alerts"><span class="ico">⚠</span> Low Stock Alerts</button>
       <button data-page="pdf"><span class="ico">▤</span> PDF Import</button>
     </nav>
@@ -57,123 +58,81 @@
     <!-- DASHBOARD PAGE -->
     <section id="page-dashboard" class="section-page active">
       <div class="stats">
-        <div class="stat">
-          <div class="stat-top"><div class="stat-icon">▦</div><span class="trend">LIVE</span></div>
-          <div class="stat-label">Total Items</div>
-          <div class="stat-value" id="statItems">0</div>
-          <div class="stat-sub">Unique item codes</div>
-        </div>
-        <div class="stat">
-          <div class="stat-top"><div class="stat-icon">◉</div><span class="trend">QTY</span></div>
-          <div class="stat-label">Total Quantity</div>
-          <div class="stat-value" id="statQty">0</div>
-          <div class="stat-sub">Sum of closing balance</div>
-        </div>
-        <div class="stat">
-          <div class="stat-top"><div class="stat-icon">⚠</div><span class="trend" style="background:#ffe5e5;color:#c93a4d">ALERT</span></div>
-          <div class="stat-label">Low Stock Items</div>
-          <div class="stat-value" id="statAlerts" style="color:#c93a4d">0</div>
-          <div class="stat-sub">Needs re-order</div>
-        </div>
-        <div class="stat">
-          <div class="stat-top"><div class="stat-icon">✧</div><span class="trend">VALUE</span></div>
-          <div class="stat-label">Total Value</div>
-          <div class="stat-value" id="statValue" style="font-size:18px">Rs. 0</div>
-          <div class="stat-sub">Total inventory cost</div>
-        </div>
+        <div class="stat"><div class="stat-top"><div class="stat-icon">▦</div><span class="trend">LIVE</span></div><div class="stat-label">Total Items</div><div class="stat-value" id="statItems">0</div></div>
+        <div class="stat"><div class="stat-top"><div class="stat-icon">◉</div><span class="trend">QTY</span></div><div class="stat-label">Total Quantity</div><div class="stat-value" id="statQty">0</div></div>
+        <div class="stat"><div class="stat-top"><div class="stat-icon">⚠</div><span class="trend" style="background:#ffe5e5;color:#c93a4d">ALERT</span></div><div class="stat-label">Low Stock Items</div><div class="stat-value" id="statAlerts" style="color:#c93a4d">0</div></div>
+        <div class="stat"><div class="stat-top"><div class="stat-icon">✧</div><span class="trend">VALUE</span></div><div class="stat-label">Total Value</div><div class="stat-value" id="statValue" style="font-size:18px">Rs. 0</div></div>
       </div>
-
       <div class="panel">
-        <div class="panel-head">
-          <div><h3>Inventory Overview</h3><div class="panel-sub">Search and monitor your stock</div></div>
-          <button class="primary" onclick="openItemModal()">＋ Add Item</button>
-        </div>
-        <div class="search-row">
-          <div class="search">
-            <span>⌕</span><input id="dashSearch" placeholder="Search..." oninput="renderDashboardTable()">
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead>
-            <tbody id="dashTable"></tbody>
-          </table>
-        </div>
+        <div class="panel-head"><div><h3>Inventory Overview</h3></div><button class="primary" onclick="openItemModal()">＋ Add Item</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="dashTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- CUSTOM INVENTORY PAGE -->
+    <!-- INVENTORY -->
     <section id="page-inventory" class="section-page">
       <div class="panel">
         <div class="panel-head">
-          <div><h3>Custom Inventory</h3><div class="panel-sub">Subinventory & WIP Data</div></div>
-          <div>
-            <button class="danger" onclick="clearSection('inventory')" style="margin-right: 8px;">Clear All</button>
-            <button class="primary" onclick="openItemModal()">＋ Add</button>
-          </div>
+          <div><h3>Custom Inventory</h3></div>
+          <div><button class="danger" onclick="clearSection('inventory')">Clear All</button></div>
         </div>
-        <div class="search-row">
-          <div class="search">
-            <span>⌕</span><input id="invSearch" placeholder="Search..." oninput="renderInventory()">
-          </div>
-          <select class="filter" id="invFilterSubInv" onchange="renderInventory()">
-            <option value="all">All Sub Inventories</option>
-            <option value="001">001 - Finished Goods</option>
-            <option value="002">002 - Raw Material</option>
-            <option value="200">200 - Work in Process</option>
-          </select>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Item Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Action</th></tr></thead>
-            <tbody id="inventoryTable"></tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- SLOW MOVING PAGE -->
+    <!-- SLOW MOVING -->
     <section id="page-slow_moving" class="section-page">
       <div class="panel">
-        <div class="panel-head">
-          <div><h3>Slow Moving Inventory</h3><div class="panel-sub">Dead stock with Cost & Value</div></div>
-          <button class="danger" onclick="clearSection('slow_moving')">Clear Slow Moving</button>
-        </div>
-        <div class="search-row">
-          <div class="search">
-            <span>⌕</span><input id="slowSearch" placeholder="Search..." oninput="renderSlowMoving()">
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Stock Qty</th><th>Rate (Cost)</th><th>Total Value</th></tr></thead>
-            <tbody id="slowTable"></tbody>
-          </table>
-        </div>
+        <div class="panel-head"><div><h3>Slow Moving Inventory</h3></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Stock Qty</th><th>Rate</th><th>Value</th></tr></thead><tbody id="slowTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- LOW STOCK ALERTS PAGE -->
+    <!-- NEW: BOM PAGE -->
+    <section id="page-bom" class="section-page">
+      <div class="panel">
+        <div class="panel-head"><div><h3>BOM Management</h3><div class="panel-sub">Parent & Child Items</div></div></div>
+        <div class="search-row"><div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Parent Item</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- NEW: ISSUE VOUCHER PAGE -->
+    <section id="page-issue" class="section-page">
+      <div class="panel">
+        <div class="panel-head"><div><h3>Issue Voucher</h3><div class="panel-sub">Material Issuance</div></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"><tr><td colspan="3" class="empty">No vouchers yet.</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- NEW: IR / MOVE ORDER PAGE -->
+    <section id="page-ir" class="section-page">
+      <div class="panel">
+        <div class="panel-head"><div><h3>IR / Move Order</h3><div class="panel-sub">Material Requests</div></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"><tr><td colspan="3" class="empty">No orders yet.</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- NEW: FAILURE PAGE -->
+    <section id="page-failure" class="section-page">
+      <div class="panel">
+        <div class="panel-head"><div><h3>Failure & Scrap</h3><div class="panel-sub">Damaged / Waste</div></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Failure Qty</th></tr></thead><tbody id="failureTable"><tr><td colspan="3" class="empty">No failure records.</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- LOW STOCK ALERTS -->
     <section id="page-alerts" class="section-page">
       <div class="panel">
-        <div class="panel-head">
-          <div><h3>⚠ Low & Zero Stock Alerts</h3><div class="panel-sub">NOS < 500 | KGS < 100 | Zero Stock</div></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead>
-            <tbody id="alertTable"></tbody>
-          </table>
-        </div>
+        <div class="panel-head"><div><h3>⚠ Low & Zero Stock Alerts</h3></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- PDF IMPORT PAGE -->
+    <!-- PDF IMPORT -->
     <section id="page-pdf" class="section-page">
       <div class="panel">
-        <div class="panel-head">
-          <div><h3>📄 PDF Import Center</h3><div class="panel-sub">Select PDF Type and Upload</div></div>
-        </div>
+        <div class="panel-head"><div><h3>📄 PDF Import Center</h3></div></div>
 
         <div class="form-grid" style="margin-bottom:16px">
           <div class="field">
@@ -191,7 +150,7 @@
 
         <div class="field" style="margin-bottom:16px">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color: #c93a4d; font-weight: bold;">
-            <input type="checkbox" id="chkDeleteOld" style="width:auto; transform:scale(1.2);"> Purana Data Delete karein (Only for this section)
+            <input type="checkbox" id="chkDeleteOld" style="width:auto; transform:scale(1.2);"> Purana Data Delete karein
           </label>
         </div>
 
@@ -209,10 +168,7 @@
             <button class="primary" onclick="confirmImport()">✓ Import Now</button>
           </div>
           <div class="table-wrap" style="max-height:420px;overflow:auto">
-            <table>
-              <thead><tr><th>Sub Inv</th><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead>
-              <tbody id="previewTable"></tbody>
-            </table>
+            <table><thead><tr><th>Sub Inv</th><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table>
           </div>
         </div>
       </div>
@@ -221,35 +177,25 @@
   </main>
 </div>
 
-<!-- MODAL FOR ADDING ITEM -->
+<!-- MODAL -->
 <div class="modal" id="itemModal">
   <div class="modal-card">
-    <div class="modal-head">
-      <h3>Add / Edit Item</h3>
-      <button class="close" onclick="closeItemModal()">×</button>
-    </div>
+    <div class="modal-head"><h3>Add / Edit Item</h3><button class="close" onclick="closeItemModal()">×</button></div>
     <div class="form-grid">
-      <div class="field"><label>Item Code *</label><input id="fCode" placeholder="e.g. CM0392-00030-10-026"></div>
-      <div class="field"><label>Sub Inventory</label><input id="fSubInv" placeholder="e.g. 200"></div>
-      <div class="field"><label>UOM</label><input id="fUom" placeholder="NOS / KGS / MTR"></div>
-      <div class="field"><label>Quantity</label><input id="fQty" type="number" step="0.01" placeholder="0"></div>
-      <div class="field"><label>Cost (Rate)</label><input id="fCost" type="number" step="0.01" placeholder="0.00"></div>
-      <div class="field full"><label>Description</label><input id="fDesc" placeholder="Item description"></div>
-      <div class="field full"><label>Source</label><input id="fSource" placeholder="Manual" value="Manual"></div>
+      <div class="field"><label>Item Code *</label><input id="fCode"></div>
+      <div class="field"><label>Sub Inventory</label><input id="fSubInv"></div>
+      <div class="field"><label>UOM</label><input id="fUom"></div>
+      <div class="field"><label>Quantity</label><input id="fQty" type="number" step="0.01"></div>
+      <div class="field"><label>Cost (Rate)</label><input id="fCost" type="number" step="0.01"></div>
+      <div class="field full"><label>Description</label><input id="fDesc"></div>
+      <div class="field full"><label>Source</label><input id="fSource" value="Manual"></div>
     </div>
-    <div class="modal-actions">
-      <button class="secondary" onclick="closeItemModal()">Cancel</button>
-      <button class="primary" onclick="saveItem()">Save Item</button>
-    </div>
+    <div class="modal-actions"><button class="secondary" onclick="closeItemModal()">Cancel</button><button class="primary" onclick="saveItem()">Save Item</button></div>
   </div>
 </div>
 
-<!-- TOAST NOTIFICATION -->
 <div class="toast" id="toast"></div>
 
-<!-- ========================================== -->
-<!-- SCRIPTS (Yahan se shuru hoti hain) -->
-<!-- ========================================== -->
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/storage.js"></script>
 <script src="js/utils.js"></script>
@@ -257,6 +203,5 @@
 <script src="js/dashboard.js"></script>
 <script src="js/pdf-import.js"></script>
 <script src="js/app.js"></script>
-
 </body>
-            </html>
+</html>
