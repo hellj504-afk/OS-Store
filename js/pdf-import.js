@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — 100% Fixed & Working
+// PDF-IMPORT.JS — 100% Fixed (String Conversion)
 // ==========================================
 
 window.importedRows = [];
@@ -29,7 +29,7 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      // FIX: Ensure har text ek String ho
+      // HAR TEXT KO FORCEFULLY STRING MEIN CONVERT KAREIN
       const words = content.items.map(it => {
         return { 
           text: String(it.str || '').trim(), 
@@ -56,7 +56,6 @@ window.handlePDF = async function(event) {
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        // Code find karein
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (codeWord) {
@@ -134,7 +133,7 @@ window.handlePDF = async function(event) {
 };
 
 // ==========================================
-// NORMAL INVENTORY (Inventory PDF)
+// NORMAL INVENTORY PARSER
 // ==========================================
 function processNormalInventory(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
@@ -147,7 +146,6 @@ function processNormalInventory(words, item) {
 
   if (uomIndex !== -1) {
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    // FIX: Ensure string methods use String() to avoid crash
     descWords = descWords.filter(t => String(t) !== String(item.code) && !String(t).startsWith('P02-'));
     item.desc = descWords.join(' ');
     
@@ -168,7 +166,7 @@ function processNormalInventory(words, item) {
 }
 
 // ==========================================
-// SLOW MOVING (Slow Moving PDF)
+// SLOW MOVING PARSER
 // ==========================================
 function processSlowMoving(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
