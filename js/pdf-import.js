@@ -29,10 +29,10 @@ window.handlePDF = async function(event) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      // Text items extract karein (Error fix: String check lagaya hai)
+      // FIX: Ensure har text ek String ho
       const words = content.items.map(it => {
         return { 
-          text: (it.str || '').trim(), 
+          text: String(it.str || '').trim(), 
           x: it.transform[4], 
           y: it.transform[5] 
         };
@@ -56,11 +56,10 @@ window.handlePDF = async function(event) {
         
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
-        // Item Code dhoondein
+        // Code find karein
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (codeWord) {
-          // Sub Inv dhoondein (agar alag word ho)
           let subInv = 'N/A';
           const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
           if (subWord) subInv = subWord.text.replace("'", "");
@@ -68,14 +67,12 @@ window.handlePDF = async function(event) {
           currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
           allRows.push(currentItem);
           
-          // PDF Type ke hisaab se logic chunte hain
           if (importType === 'slow_moving') {
              processSlowMoving(line.words, currentItem);
           } else {
              processNormalInventory(line.words, currentItem);
           }
         } else if (currentItem) {
-          // Agar line mein code nahi hai, toh ye description ya extra data hai
           if (importType === 'slow_moving') {
              processSlowMoving(line.words, currentItem);
           } else {
@@ -85,12 +82,10 @@ window.handlePDF = async function(event) {
       }
     }
 
-    // Data ko jama karein (Merge same item codes)
     const map = {};
     allRows.forEach(r => { 
       r.desc = r.desc.replace(/\s+/g, ' ').trim();
       
-      // Agar sub inv N/A hai aur description ke shuru mein '002' jesa kuch hai, toh usko alag karein
       if (r.subInv === 'N/A') {
         const match = r.desc.match(/^'?(\d{3})\s+(.*)/);
         if (match) { r.subInv = match[1]; r.desc = match[2]; }
@@ -109,7 +104,7 @@ window.handlePDF = async function(event) {
     window.importedRows = finalRows;
 
     if (!finalRows.length) {
-      statusDiv.textContent = '⚠ No valid rows found. Please check the PDF format.';
+      statusDiv.textContent = '⚠ No valid rows found. Check PDF format.';
       statusDiv.className = 'pdf-status error';
       return;
     }
@@ -117,7 +112,6 @@ window.handlePDF = async function(event) {
     document.getElementById('previewArea').style.display = 'block';
     document.getElementById('previewCount').textContent = finalRows.length;
     
-    // Preview show karein
     document.getElementById('previewTable').innerHTML = finalRows.slice(0, 200).map(r => `
       <tr>
         <td>${r.subInv}</td>
@@ -140,8 +134,7 @@ window.handlePDF = async function(event) {
 };
 
 // ==========================================
-// NORMAL INVENTORY PARSER
-// Format: 200 | P02-... | Code | Desc | UOM | 14.00 | 0.00 | 0.00 | 14.00
+// NORMAL INVENTORY (Inventory PDF)
 // ==========================================
 function processNormalInventory(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
@@ -153,27 +146,29 @@ function processNormalInventory(words, item) {
   }
 
   if (uomIndex !== -1) {
-    // UOM se pehle Description
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    descWords = descWords.filter(t => t !== item.code && !t.startsWith('P02-'));
+    // FIX: Ensure string methods use String() to avoid crash
+    descWords = descWords.filter(t => String(t) !== String(item.code) && !String(t).startsWith('P02-'));
     item.desc = descWords.join(' ');
     
-    // UOM ke baad numbers (Closing qty aakhri hoti hai)
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
     if (nums.length > 0) item.qty = nums[nums.length - 1];
   } else {
-    // Description continuation
-    let extra = words.filter(w => !numRegex.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.startsWith('P02-')).map(w => w.text).join(' ');
+    let extra = words.filter(w => 
+      !numRegex.test(w.text) && 
+      String(w.text) !== String(item.code) && 
+      !String(w.text).includes(item.subInv) && 
+      !String(w.text).startsWith('P02-')
+    ).map(w => w.text).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
 
 // ==========================================
-// SLOW MOVING PARSER
-// Format: Code | Desc | NOS | Stock | Rate | Value ...
+// SLOW MOVING (Slow Moving PDF)
 // ==========================================
 function processSlowMoving(words, item) {
   const uomRegex = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
@@ -185,28 +180,25 @@ function processSlowMoving(words, item) {
   }
 
   if (uomIndex !== -1) {
-    // Description UOM se pehle hoti hai
     let descWords = words.slice(0, uomIndex).map(w => w.text);
-    descWords = descWords.filter(t => t !== item.code);
+    descWords = descWords.filter(t => String(t) !== String(item.code));
     item.desc = descWords.join(' ');
     
-    // UOM ke baad: Pehla number Stock (Qty), Dusra number Rate (Cost)
     const nums = [];
     for (let i = uomIndex + 1; i < words.length; i++) {
       if (numRegex.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
     
-    if (nums.length >= 1) item.qty = nums[0]; // Stock Qty
-    if (nums.length >= 2) item.cost = nums[1]; // Rate
+    if (nums.length >= 1) item.qty = nums[0]; 
+    if (nums.length >= 2) item.cost = nums[1]; 
   } else {
-    // Description continuation
-    let extra = words.filter(w => !numRegex.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
+    let extra = words.filter(w => !numRegex.test(w.text) && String(w.text) !== String(item.code)).map(w => w.text).join(' ');
     if (extra.trim()) item.desc += ' ' + extra;
   }
 }
 
 // ==========================================
-// SAVE TO FIREBASE
+// IMPORT TO FIREBASE
 // ==========================================
 window.confirmImport = async function() {
   if (!window.importedRows.length) return;
