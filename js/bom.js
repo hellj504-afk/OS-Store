@@ -12,8 +12,6 @@ window.renderBOM = async function() {
 
   try {
     const allData = await window.loadInventoryFromFirebase();
-    
-    // Filter only BOM / Assembly types
     const bomData = allData.filter(item => item.source && (item.source.includes('bom') || item.source.includes('assembly')));
 
     if (bomData.length === 0) {
@@ -72,7 +70,6 @@ window.calculateFailure = async function() {
 
   const allData = await window.loadInventoryFromFirebase();
   
-  // Get all BOMs for this FG (Pre, Final, BOM combined)
   const bomItems = allData.filter(i => i.source && (i.source.includes('bom') || i.source.includes('assembly')) && i.parent === fgCode);
   
   if (bomItems.length === 0) {
@@ -81,7 +78,6 @@ window.calculateFailure = async function() {
     return;
   }
 
-  // Group by Child Code to combine Qty if it appears in multiple BOM levels
   const mergedBom = {};
   bomItems.forEach(item => {
      if (mergedBom[item.code]) {
