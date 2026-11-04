@@ -55,7 +55,7 @@
       </div>
     </header>
 
-    <!-- DASHBOARD PAGE -->
+    <!-- DASHBOARD -->
     <section id="page-dashboard" class="section-page active">
       <div class="stats">
         <div class="stat"><div class="stat-top"><div class="stat-icon">▦</div><span class="trend">LIVE</span></div><div class="stat-label">Total Items</div><div class="stat-value" id="statItems">0</div></div>
@@ -91,38 +91,36 @@
     <!-- BOM PAGE -->
     <section id="page-bom" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>BOM Management</h3><div class="panel-sub">Parent & Child Items</div></div></div>
+        <div class="panel-head"><div><h3>BOM Management</h3></div></div>
         <div class="search-row"><div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>Parent Item</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- ISSUE VOUCHER PAGE -->
+    <!-- ISSUE VOUCHER -->
     <section id="page-issue" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>Issue Voucher</h3><div class="panel-sub">Material Issuance</div></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"><tr><td colspan="3" class="empty">No vouchers yet.</td></tr></tbody></table></div>
+        <div class="panel-head"><div><h3>Issue Voucher</h3></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- IR / MOVE ORDER PAGE -->
+    <!-- IR / MOVE ORDER -->
     <section id="page-ir" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>IR / Move Order</h3><div class="panel-sub">Material Requests</div></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"><tr><td colspan="3" class="empty">No orders yet.</td></tr></tbody></table></div>
+        <div class="panel-head"><div><h3>IR / Move Order</h3></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- FAILURE / SCRAP PAGE -->
+    <!-- FAILURE & SCRAP -->
     <section id="page-failure" class="section-page">
       <div class="panel">
-        <div class="panel-head">
-          <div><h3>Scrap / Failure Management</h3><div class="panel-sub">Enter FG Code and Qty to detect BOM materials</div></div>
-        </div>
+        <div class="panel-head"><div><h3>Scrap / Failure Management</h3></div></div>
         
-        <div class="form-grid" style="margin-bottom:20px; background: rgba(255,255,255,0.4); padding:15px; border-radius:15px;">
+        <div class="form-grid" style="margin-bottom:20px; padding:15px;">
           <div class="field">
-            <label>FG Item Code (e.g. FG1060-...)</label>
+            <label>FG Item Code</label>
             <input id="failCode" placeholder="Enter FG Code">
           </div>
           <div class="field">
@@ -141,7 +139,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Component Code</th><th>Description</th><th>Required Qty</th><th>UOM</th><th>Unit Cost</th><th>Total Cost</th><th>Action</th></tr></thead>
+              <thead><tr><th>Component</th><th>Description</th><th>Req Qty</th><th>UOM</th><th>Unit Cost</th><th>Total Cost</th><th>Action</th></tr></thead>
               <tbody id="failureResultTable"></tbody>
             </table>
           </div>
@@ -149,7 +147,7 @@
       </div>
     </section>
 
-    <!-- LOW STOCK ALERTS -->
+    <!-- LOW STOCK -->
     <section id="page-alerts" class="section-page">
       <div class="panel">
         <div class="panel-head"><div><h3>⚠ Low & Zero Stock Alerts</h3></div></div>
@@ -167,7 +165,7 @@
             <label>1. Select PDF Type</label>
             <select id="importType">
               <option value="inventory">Inventory (Subinventory)</option>
-              <option value="slow_moving">Slow Moving Inventory (with Cost)</option>
+              <option value="slow_moving">Slow Moving Inventory</option>
               <option value="bom">BOM Detail Report</option>
               <option value="issue_voucher">Issue Voucher</option>
               <option value="ir_voucher">IR / Move Order</option>
@@ -216,7 +214,6 @@
       <div class="field"><label>Quantity</label><input id="fQty" type="number" step="0.01"></div>
       <div class="field"><label>Cost (Rate)</label><input id="fCost" type="number" step="0.01"></div>
       <div class="field full"><label>Description</label><input id="fDesc"></div>
-      <div class="field full"><label>Source</label><input id="fSource" value="Manual"></div>
     </div>
     <div class="modal-actions"><button class="secondary" onclick="closeItemModal()">Cancel</button><button class="primary" onclick="saveItem()">Save Item</button></div>
   </div>
@@ -224,6 +221,7 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Scripts (Order is very important) -->
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/storage.js"></script>
 <script src="js/utils.js"></script>
@@ -233,4 +231,4 @@
 <script src="js/bom.js"></script>
 <script src="js/app.js"></script>
 </body>
-                                                                                                                                                   </html>
+  </html>
