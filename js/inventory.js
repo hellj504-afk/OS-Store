@@ -1,11 +1,20 @@
+// ==========================================
+// INVENTORY.JS
+// ==========================================
+
 window.inventoryData = [];
 window.isDataLoaded = false;
 
 window.openItemModal = function() {
   document.getElementById('itemModal').classList.add('open');
-  ['fCode','fSubInv','fUom','fDesc','fQty','fCost'].forEach(id => document.getElementById(id).value = '');
+  ['fCode','fSubInv','fUom','fDesc','fQty','fCost'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  document.getElementById('fSource').value = 'Manual';
   document.getElementById('fCode').focus();
 };
+
 window.closeItemModal = function() { document.getElementById('itemModal').classList.remove('open'); };
 
 window.saveItem = async function() {
@@ -18,7 +27,7 @@ window.saveItem = async function() {
     desc: document.getElementById('fDesc').value.trim(),
     uom: document.getElementById('fUom').value.trim().toUpperCase() || 'NOS',
     qty: parseFloat(document.getElementById('fQty').value) || 0,
-    cost: parseFloat(document.getElementById('fCost').value) || 0,
+    cost: parseFloat(document.getElementById('fCost')?.value) || 0,
     source: 'Manual'
   };
 
@@ -41,9 +50,8 @@ window.clearSection = async function(type) {
   try {
     const allData = await window.loadInventoryFromFirebase();
     for (const item of allData) {
-      // Agar PDF type match karta hai toh delete karein
-      if (type === 'inventory' && !item.source.includes('slow_moving')) await window.deleteItemFromFirebase(item.id || item.code);
-      if (type === 'slow_moving' && item.source.includes('slow_moving')) await window.deleteItemFromFirebase(item.id || item.code);
+      if (type === 'inventory' && (!item.source || !item.source.includes('slow_moving'))) await window.deleteItemFromFirebase(item.id || item.code);
+      if (type === 'slow_moving' && item.source && item.source.includes('slow_moving')) await window.deleteItemFromFirebase(item.id || item.code);
     }
     showToast('Data cleared!', 'success');
     await refreshInventoryData();
@@ -54,12 +62,14 @@ window.refreshInventoryData = async function() {
   if (!window.loadInventoryFromFirebase) return;
   window.inventoryData = await window.loadInventoryFromFirebase();
   window.isDataLoaded = true;
-  renderInventory(); renderSlowMoving(); renderAlerts();
+  
+  if (window.renderInventory) renderInventory(); 
+  if (window.renderSlowMoving) renderSlowMoving(); 
+  if (window.renderAlerts) renderAlerts();
   if (window.renderDashboardTable) renderDashboardTable();
   if (window.updateDashboardStats) updateDashboardStats();
 };
 
-// 1. NORMAL INVENTORY TABLE
 window.renderInventory = function() {
   const tbody = document.getElementById('inventoryTable');
   if (!tbody) return;
@@ -67,7 +77,7 @@ window.renderInventory = function() {
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
   const subInvFilter = document.getElementById('invFilterSubInv')?.value || 'all';
 
-  // Filter out slow moving data
+  // Sirf normal inventory data (slow moving nikal dein)
   let data = window.inventoryData.filter(item => !item.source?.includes('slow_moving'));
 
   const merged = {};
@@ -90,23 +100,22 @@ window.renderInventory = function() {
 
   tbody.innerHTML = finalData.map(i => `
     <tr>
-      <td class="code">${i.code}</td><td><span class="badge no">${i.subInv}</span></td>
-      <td>${i.desc}</td><td>${i.uom}</td><td style="font-weight:bold; color:var(--blue);">${formatNumber(i.qty)}</td>
+      <td class="code">${i.code}</td>
+      <td><span class="badge no">${i.subInv}</span></td>
+      <td>${i.desc}</td>
+      <td>${i.uom}</td>
+      <td style="font-weight:bold; color:var(--blue);">${formatNumber(i.qty)}</td>
       <td><button class="danger" onclick="deleteItem('${i.code}')">Del</button></td>
     </tr>
   `).join('');
 };
 
-// 2. SLOW MOVING TABLE (Naya)
 window.renderSlowMoving = function() {
   const tbody = document.getElementById('slowTable');
   if (!tbody) return;
 
   const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
-  
-  // Sirf slow moving data uthayen
   let data = window.inventoryData.filter(item => item.source?.includes('slow_moving'));
-  
   data = data.filter(item => !query || item.code.toLowerCase().includes(query) || (item.desc||'').toLowerCase().includes(query));
   data.sort((a, b) => a.code.localeCompare(b.code));
 
@@ -126,7 +135,6 @@ window.renderSlowMoving = function() {
   }).join('');
 };
 
-// 3. LOW STOCK ALERTS (100% Working Logic)
 window.renderAlerts = function() {
   const tbody = document.getElementById('alertTable');
   if (!tbody) return;
@@ -134,28 +142,20 @@ window.renderAlerts = function() {
   const merged = {};
   window.inventoryData.forEach(item => {
     const code = item.code;
-    if (merged[code]) {
-      merged[code].qty += (Number(item.qty) || 0);
-    } else {
-      merged[code] = { ...item, qty: Number(item.qty) || 0 };
-    }
+    if (merged[code]) merged[code].qty += (Number(item.qty) || 0);
+    else merged[code] = { ...item, qty: Number(item.qty) || 0 };
   });
 
   let alerts = [];
   Object.values(merged).forEach(item => {
     const qty = Number(item.qty);
     const uom = (item.uom || 'NOS').toUpperCase();
-    
     let statusText = '';
     let isAlert = false;
 
-    if (qty <= 0) {
-      isAlert = true; statusText = 'OUT OF STOCK';
-    } else if (uom === 'NOS' && qty < 500) {
-      isAlert = true; statusText = 'LOW (< 500)';
-    } else if ((uom === 'KGS' || uom === 'KG') && qty < 100) {
-      isAlert = true; statusText = 'LOW (< 100)';
-    }
+    if (qty <= 0) { isAlert = true; statusText = 'OUT OF STOCK'; }
+    else if (uom === 'NOS' && qty < 500) { isAlert = true; statusText = 'LOW (< 500)'; }
+    else if ((uom === 'KGS' || uom === 'KG') && qty < 100) { isAlert = true; statusText = 'LOW (< 100)'; }
 
     if (isAlert) alerts.push({ ...item, statusText });
   });
