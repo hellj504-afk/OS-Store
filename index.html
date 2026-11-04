@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreOS — Inventory Workspace</title>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
 <link rel="stylesheet" href="css/background.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/components.css">
@@ -17,6 +19,7 @@
 </div>
 
 <div class="shell">
+
   <aside class="sidebar">
     <div class="brand">
       <div class="logo">◈</div>
@@ -34,13 +37,22 @@
       <button data-page="alerts"><span class="ico">⚠</span> Low Stock Alerts</button>
       <button data-page="pdf"><span class="ico">▤</span> PDF Import</button>
     </nav>
-    <div class="side-bottom"><strong>✧ Cloud workspace</strong>Data is synced to Firebase.</div>
+    <div class="side-bottom">
+      <strong>✧ Cloud workspace</strong>Data is synced to Firebase. Accessible from any device.
+    </div>
   </aside>
 
   <main>
+
     <header class="topbar">
-      <div><div class="eyebrow">STORE OPERATIONS / OVERVIEW</div><h1 id="headerTitle">Dashboard</h1></div>
-      <div class="top-actions"><div class="date-pill" id="todayDate">—</div><div class="avatar">S</div></div>
+      <div>
+        <div class="eyebrow">STORE OPERATIONS / OVERVIEW</div>
+        <h1 id="headerTitle">Dashboard</h1>
+      </div>
+      <div class="top-actions">
+        <div class="date-pill" id="todayDate">—</div>
+        <div class="avatar">S</div>
+      </div>
     </header>
 
     <!-- DASHBOARD -->
@@ -60,7 +72,13 @@
     <!-- INVENTORY -->
     <section id="page-inventory" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>Custom Inventory</h3></div><div><button class="danger" onclick="clearSection('inventory')">Clear All</button></div></div>
+        <div class="panel-head">
+          <div><h3>Custom Inventory</h3></div>
+          <div>
+            <button class="danger" onclick="clearSection('inventory')" style="margin-right: 8px;">Clear All</button>
+            <button class="primary" onclick="openItemModal()">＋ Add</button>
+          </div>
+        </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
       </div>
     </section>
@@ -68,7 +86,10 @@
     <!-- SLOW MOVING -->
     <section id="page-slow_moving" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>Slow Moving Inventory</h3></div></div>
+        <div class="panel-head">
+          <div><h3>Slow Moving Inventory</h3></div>
+          <div><button class="danger" onclick="clearSection('slow_moving')">Clear</button></div>
+        </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Stock Qty</th><th>Rate</th><th>Value</th></tr></thead><tbody id="slowTable"></tbody></table></div>
       </div>
     </section>
@@ -76,9 +97,12 @@
     <!-- BOM PAGE -->
     <section id="page-bom" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>BOM Management</h3></div></div>
+        <div class="panel-head">
+          <div><h3>BOM Management</h3></div>
+          <div><button class="danger" onclick="clearSection('bom')">Clear BOM</button></div>
+        </div>
         <div class="search-row">
-          <div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search FG or Component..." oninput="renderBOM()"></div>
+          <div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div>
           <select class="filter" id="bomFilterType" onchange="renderBOM()">
             <option value="all">All BOM Types</option>
             <option value="pre_assembly">Pre Assembly</option>
@@ -88,7 +112,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>BOM Type</th><th>Parent (FG)</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead>
+            <thead><tr><th>BOM Type</th><th>Parent (FG/WIP)</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead>
             <tbody id="bomTable"></tbody>
           </table>
         </div>
@@ -98,7 +122,10 @@
     <!-- ISSUE VOUCHER -->
     <section id="page-issue" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>Issue Voucher</h3></div></div>
+        <div class="panel-head">
+          <div><h3>Issue Voucher</h3></div>
+          <div><button class="danger" onclick="clearSection('issue_voucher')">Clear</button></div>
+        </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div>
       </div>
     </section>
@@ -106,7 +133,10 @@
     <!-- IR / MOVE ORDER -->
     <section id="page-ir" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>IR / Move Order</h3></div></div>
+        <div class="panel-head">
+          <div><h3>IR / Move Order</h3></div>
+          <div><button class="danger" onclick="clearSection('ir_voucher')">Clear</button></div>
+        </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div>
       </div>
     </section>
@@ -114,26 +144,47 @@
     <!-- FAILURE & SCRAP -->
     <section id="page-failure" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>Scrap / Failure Management</h3></div></div>
-        <div class="form-grid" style="margin-bottom:20px; padding:15px;">
-          <div class="field"><label>FG Item Code</label><input id="failCode" placeholder="Enter FG Code"></div>
-          <div class="field"><label>Failure Quantity</label><input id="failQty" type="number" step="0.01" placeholder="0.00"></div>
-          <div class="field full" style="display:flex; justify-content:flex-end;"><button class="primary" onclick="calculateFailure()">🔍 Detect Material & Cost</button></div>
+        <div class="panel-head">
+          <div><h3>Scrap / Failure Management</h3></div>
+          <div><button class="danger" onclick="clearSection('failure')">Clear</button></div>
         </div>
+        
+        <div class="form-grid" style="margin-bottom:20px; padding:15px;">
+          <div class="field">
+            <label>FG Item Code</label>
+            <input id="failCode" placeholder="Enter FG Code">
+          </div>
+          <div class="field">
+            <label>Failure Quantity</label>
+            <input id="failQty" type="number" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field full" style="display:flex; justify-content:flex-end;">
+            <button class="primary" onclick="calculateFailure()">🔍 Detect Material & Cost</button>
+          </div>
+        </div>
+
         <div id="failureResultArea" style="display:none; margin-top:20px;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
              <h4 style="margin:0;">Required Materials (BOM)</h4>
              <h4 style="margin:0; color:#c93a4d;">Total Cost: <span id="failTotalCost">Rs. 0</span></h4>
           </div>
-          <div class="table-wrap"><table><thead><tr><th>Component</th><th>Description</th><th>Req Qty</th><th>UOM</th><th>Unit Cost</th><th>Total Cost</th><th>Action</th></tr></thead><tbody id="failureResultTable"></tbody></table></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Component</th><th>Description</th><th>Req Qty</th><th>UOM</th><th>Unit Cost</th><th>Total Cost</th><th>Action</th></tr></thead>
+              <tbody id="failureResultTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- LOW STOCK -->
+    <!-- LOW STOCK ALERTS -->
     <section id="page-alerts" class="section-page">
       <div class="panel">
-        <div class="panel-head"><div><h3>⚠ Low & Zero Stock Alerts</h3></div></div>
+        <div class="panel-head">
+          <div><h3>⚠ Low & Zero Stock Alerts</h3></div>
+          <div><button class="danger" onclick="clearSection('inventory')">Clear Inventory</button></div>
+        </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div>
       </div>
     </section>
@@ -142,6 +193,7 @@
     <section id="page-pdf" class="section-page">
       <div class="panel">
         <div class="panel-head"><div><h3>📄 PDF Import Center</h3></div></div>
+
         <div class="form-grid" style="margin-bottom:16px">
           <div class="field">
             <label>1. Select PDF Type</label>
@@ -157,26 +209,37 @@
             </select>
           </div>
         </div>
+
         <div class="field" style="margin-bottom:16px">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color: #c93a4d; font-weight: bold;">
             <input type="checkbox" id="chkDeleteOld" style="width:auto; transform:scale(1.2);"> Purana Data Delete karein
           </label>
         </div>
+
         <div class="import-box" onclick="document.getElementById('pdfFile').click()">
           <div style="font-size:36px;margin-bottom:10px">📄</div>
           <div style="font-weight:700;font-size:14px">Click to select PDF file</div>
           <input type="file" id="pdfFile" accept="application/pdf" style="display:none" onchange="handlePDF(event)">
         </div>
+
         <div id="pdfStatus" class="pdf-status"></div>
+
         <div id="previewArea" style="display:none">
-          <div class="preview-head"><strong>Preview: <span id="previewCount">0</span> rows</strong><button class="primary" onclick="confirmImport()">✓ Import Now</button></div>
-          <div class="table-wrap" style="max-height:420px;overflow:auto"><table><thead><tr><th>Sub Inv</th><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table></div>
+          <div class="preview-head">
+            <strong>Preview: <span id="previewCount">0</span> rows</strong>
+            <button class="primary" onclick="confirmImport()">✓ Import Now</button>
+          </div>
+          <div class="table-wrap" style="max-height:420px;overflow:auto">
+            <table><thead><tr><th>Sub Inv</th><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table>
+          </div>
         </div>
       </div>
     </section>
+
   </main>
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="itemModal">
   <div class="modal-card">
     <div class="modal-head"><h3>Add / Edit Item</h3><button class="close" onclick="closeItemModal()">×</button></div>
@@ -203,4 +266,4 @@
 <script src="js/bom.js"></script>
 <script src="js/app.js"></script>
 </body>
-              </html>
+  </html>
