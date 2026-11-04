@@ -2,9 +2,6 @@
 // BOM.JS — BOM View, Failure Calc & Reuse
 // ==========================================
 
-window.bomDataCache = [];
-
-// 1. BOM PAGE LOAD
 window.renderBOM = async function() {
   const tbody = document.getElementById('bomTable');
   if (!tbody) return;
@@ -15,16 +12,16 @@ window.renderBOM = async function() {
 
   try {
     const allData = await window.loadInventoryFromFirebase();
-    // Sirf BOM wala data
-    window.bomDataCache = allData.filter(item => item.source && item.source.includes('bom'));
+    // Filter BOM Data
+    const bomData = allData.filter(item => item.source && item.source.includes('bom'));
 
-    if (window.bomDataCache.length === 0) {
+    if (bomData.length === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="empty">No BOM data found. Please upload BOM PDF in PDF Import.</td></tr>`;
       return;
     }
 
     const query = document.getElementById('bomSearch')?.value.toLowerCase() || '';
-    const filtered = window.bomDataCache.filter(item => 
+    const filtered = bomData.filter(item => 
       !query || item.code.toLowerCase().includes(query) || (item.desc || '').toLowerCase().includes(query) || (item.parent || '').toLowerCase().includes(query)
     );
 
@@ -48,7 +45,6 @@ window.renderBOM = async function() {
   }
 };
 
-// 2. FAILURE / SCRAP CALCULATION
 window.calculateFailure = async function() {
   const fgCode = document.getElementById('failCode').value.trim().toUpperCase();
   const failQty = parseFloat(document.getElementById('failQty').value) || 0;
@@ -58,11 +54,11 @@ window.calculateFailure = async function() {
   const resultArea = document.getElementById('failureResultArea');
   const resultBody = document.getElementById('failureResultTable');
   resultArea.style.display = 'block';
-  resultBody.innerHTML = `<tr><td colspan="7" class="empty">Searching BOM & Inventory...</td></tr>`;
+  resultBody.innerHTML = `<tr><td colspan="7" class="empty">Searching BOM...</td></tr>`;
 
   const allData = await window.loadInventoryFromFirebase();
   
-  // 1. FG Code ke children dhoondein BOM mein
+  // Find children for FG code
   const bomItems = allData.filter(i => i.source?.includes('bom') && i.parent === fgCode);
   
   if (bomItems.length === 0) {
@@ -71,7 +67,6 @@ window.calculateFailure = async function() {
     return;
   }
 
-  // 2. Inventory se un children ka Cost nikaalein
   let totalCost = 0;
   const finalRows = bomItems.map(bomItem => {
      const invItem = allData.find(i => i.code === bomItem.code && !i.source?.includes('bom'));
@@ -85,7 +80,6 @@ window.calculateFailure = async function() {
 
   document.getElementById('failTotalCost').textContent = 'Rs. ' + formatNumber(totalCost);
 
-  // 3. Table render karein Reuse button ke sath
   resultBody.innerHTML = finalRows.map((r, index) => `
     <tr>
       <td class="code">${r.code}</td>
@@ -99,7 +93,6 @@ window.calculateFailure = async function() {
   `).join('');
 };
 
-// 3. REUSE LOGIC
 window.reuseMaterial = async function(code, qty) {
   if (!confirm(`Kya aap ${qty} qty wapas inventory mein add karna chahte hain?`)) return;
   
@@ -113,14 +106,13 @@ window.reuseMaterial = async function(code, qty) {
       showToast(`${qty} qty successfully reused!`, 'success');
       await window.refreshInventoryData();
     } else {
-      showToast('Original inventory item not found to update.', 'error');
+      showToast('Item not found in inventory to update.', 'error');
     }
   } catch (err) {
     showToast('Reuse failed: ' + err.message, 'error');
   }
 };
 
-// Placeholders for other pages
+// Other placeholders
 window.renderIssue = function() { document.getElementById('issueTable').innerHTML = `<tr><td colspan="3" class="empty">Issue Voucher data will show here.</td></tr>`; };
 window.renderIR = function() { document.getElementById('irTable').innerHTML = `<tr><td colspan="3" class="empty">IR / Move Order data will show here.</td></tr>`; };
-window.renderFailure = function() { /* Handled by UI */ };
