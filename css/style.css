@@ -1,61 +1,104 @@
-/* --- ColorOS 17 Glass Water Theme --- */
+/* ==========================================
+   GLASS WATER THEME (ColorOS 17 Style)
+   ========================================== */
+
+:root {
+  --ink: #1f2a44;
+  --muted: #6b7a95;
+  --line: rgba(255, 255, 255, 0.6);
+  --glass: rgba(255, 255, 255, 0.25);
+  --glass-strong: rgba(255, 255, 255, 0.6);
+  --blue: #3b7bff;
+  --danger: #c93a4d;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--ink); overflow-x: hidden; }
+button, input, select { font: inherit; border: 0; outline: none; }
+button { cursor: pointer; }
+
+/* Glass Effect Class */
 .glass-effect {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
-  border-radius: 24px;
+  background: var(--glass) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--line) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
-/* Water Ripple on Click (Touch Sensitive Light) */
+/* Water Ripple Animation on Click */
 .glass-effect::after {
   content: '';
   position: absolute;
   top: 50%; left: 50%;
   width: 5px; height: 5px;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.5);
   opacity: 0;
   border-radius: 100%;
   transform: scale(1, 1) translate(-50%);
   transform-origin: 50% 50%;
 }
-.glass-effect:focus:not(:focus-visible)::after,
 .glass-effect:active::after {
   animation: ripple 0.6s ease-out;
 }
 @keyframes ripple {
-  0% { transform: scale(0, 0); opacity: 0.5; }
+  0% { transform: scale(0, 0); opacity: 0.6; }
   20% { transform: scale(25, 25); opacity: 1; }
   100% { opacity: 0; transform: scale(40, 40); }
 }
 
+/* App Layout */
+.shell { max-width: 1440px; margin: auto; padding: 24px; display: grid; grid-template-columns: 245px 1fr; gap: 22px; min-height: 100vh; }
+.sidebar { padding: 22px 15px; position: sticky; top: 24px; height: calc(100vh - 48px); display: flex; flex-direction: column; }
+.main { min-width: 0; }
+
+/* Sidebar */
+.brand { display: flex; align-items: center; gap: 11px; padding: 2px 9px 25px; font-weight: 800; font-size: 19px; }
+.brand small { display: block; font-size: 9px; color: var(--muted); letter-spacing: 1.5px; margin-top: 3px; }
+.logo { width: 39px; height: 39px; border-radius: 13px; background: linear-gradient(145deg, #6ea8ff, #4d6fe8); display: grid; place-items: center; color: #fff; font-size: 19px; box-shadow: 0 8px 20px rgba(80, 120, 220, 0.4); }
+
+.nav-label { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); font-weight: 800; padding: 14px 12px 8px; }
+.nav { display: flex; flex-direction: column; gap: 5px; }
+.nav button { display: flex; align-items: center; gap: 12px; padding: 12px 13px; border-radius: 14px; background: transparent; text-align: left; color: #5a6884; font-size: 13px; font-weight: 650; }
+.nav button:hover, .nav button.active { background: rgba(255, 255, 255, 0.6); color: var(--blue); }
+
+/* Topbar */
+.topbar { padding: 17px 22px; display: flex; justify-content: space-between; margin-bottom: 23px; }
+.topbar h1 { margin: 4px 0 0; font-size: 25px; }
+
+/* Stats / Dashboard Cards */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.stat { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.stat-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.4); display: grid; place-items: center; font-size: 20px; }
+.stat-value { font-size: 24px; font-weight: 800; }
+
 /* Dashboard Icon Animations */
 .stat-icon-anim .stat-icon { animation: floatIcon 3s ease-in-out infinite; }
-.stat-icon-anim:nth-child(2) .stat-icon { animation-delay: 0.5s; }
-.stat-icon-anim:nth-child(3) .stat-icon { animation-delay: 1s; }
-.stat-icon-anim:nth-child(4) .stat-icon { animation-delay: 1.5s; }
-@keyframes floatIcon {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
+@keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
-/* Danger Blink (Low Stock) */
+/* Danger Blink Animation */
 .danger-blink { animation: dangerPulse 1.5s infinite; }
-@keyframes dangerPulse {
-  0% { box-shadow: 0 0 0 0 rgba(201, 58, 77, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(201, 58, 77, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(201, 58, 77, 0); }
-}
+@keyframes dangerPulse { 0% { box-shadow: 0 0 0 0 rgba(201,58,77,0.4); } 70% { box-shadow: 0 0 0 10px rgba(201,58,77,0); } 100% { box-shadow: 0 0 0 0 rgba(201,58,77,0); } }
 
-/* Failure Blast Animation */
-.blast-btn { position: relative; overflow: hidden; }
-.blast-btn:active { animation: blastShake 0.3s; }
-@keyframes blastShake {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1) rotate(2deg); filter: brightness(1.5); }
-  100% { transform: scale(1); }
-}
+/* Panels & Tables */
+.panel { padding: 20px; margin-bottom: 18px; }
+.panel-head { display: flex; justify-content: space-between; margin-bottom: 15px; }
+.table-wrap { overflow: auto; border-radius: 14px; background: rgba(255,255,255,0.2); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; background: rgba(255,255,255,0.4); padding: 12px; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+td { padding: 12px; border-top: 1px solid rgba(255,255,255,0.3); }
+
+/* Buttons */
+.primary { background: var(--blue); color: white; padding: 10px 16px; border-radius: 12px; font-weight: bold; }
+.danger { background: rgba(201,58,77,0.1); color: var(--danger); padding: 8px 12px; border-radius: 12px; }
+.secondary { background: rgba(255,255,255,0.4); color: var(--ink); padding: 10px 16px; border-radius: 12px; }
+
+/* Inputs */
+input, select { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.4); }
+
+/* Responsive */
+@media(max-width: 800px) { .shell { display: block; padding: 12px; } .sidebar { display: none; } .stats { grid-template-columns: 1fr 1fr; } }
