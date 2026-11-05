@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Safe & Fixed Version
+// PDF-IMPORT.JS — Final Working Version
 // ==========================================
 
 window.importedRows = [];
@@ -18,7 +18,7 @@ window.handleFileUpload = async function(event) {
 
 function handleCSV(file) {
   const statusDiv = document.getElementById('pdfStatus');
-  statusDiv.textContent = '⏳ Reading Excel/CSV...';
+  statusDiv.textContent = '⏳ Reading CSV...';
   statusDiv.className = 'pdf-status';
   document.getElementById('previewArea').style.display = 'none';
 
