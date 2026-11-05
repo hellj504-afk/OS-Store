@@ -1,5 +1,5 @@
 // ==========================================
-// STORAGE.JS — Firebase Firestore connection
+// STORAGE.JS — Firebase Connection & Save
 // ==========================================
 
 import { 
@@ -10,8 +10,6 @@ import {
   deleteDoc 
 } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
 
-// Firebase DB ko global window se uthayen (jo firebase-config.js ne set kiya tha)
-// Thoda wait karte hain taake firebase-config load ho jaye
 const waitForDB = setInterval(() => {
   if (window.firebaseDB) {
     clearInterval(waitForDB);
@@ -22,7 +20,7 @@ const waitForDB = setInterval(() => {
 function initStorage(db) {
   const COLLECTION_NAME = "inventory";
 
-  // 1. Saara data Firebase se load karna
+  // 1. Load Data
   window.loadInventoryFromFirebase = async function() {
     try {
       const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
@@ -37,10 +35,9 @@ function initStorage(db) {
     }
   };
 
-  // 2. Ek item save karna (agar code pehle se hai toh update, warna naya add)
+  // 2. Save Single Item
   window.saveItemToFirebase = async function(item) {
     try {
-      // Item code ko document ID bana rahe hain taake duplicate na ho
       const itemRef = doc(db, COLLECTION_NAME, item.code); 
       await setDoc(itemRef, item);
       return true;
@@ -50,7 +47,7 @@ function initStorage(db) {
     }
   };
 
-  // 3. Ek item delete karna
+  // 3. Delete Single Item
   window.deleteItemFromFirebase = async function(itemCode) {
     try {
       await deleteDoc(doc(db, COLLECTION_NAME, itemCode));
@@ -61,26 +58,24 @@ function initStorage(db) {
     }
   };
 
-  // 4. Saara data ek sath save karna (PDF Import ke waqt kaam ayega)
+  // 4. Bulk Save (PDF/Excel Import ke liye) - FIXED
   window.bulkSaveToFirebase = async function(itemsArray) {
     try {
       let count = 0;
       for (const item of itemsArray) {
+        // Har item ko uske code se save karein (taake duplicate na ho)
         const itemRef = doc(db, COLLECTION_NAME, item.code);
         await setDoc(itemRef, item);
         count++;
       }
-      return count;
+      return count; // Kitne items save hue wo return karega
     } catch (e) {
       console.error("Error bulk saving: ", e);
-      return 0;
+      throw e; // Error throw karein taake UI mein pata chale
     }
   };
 
-  // Global flag set karein taake baaki code ko pata chale Firebase ready hai
   window.firebaseReady = true;
   console.log("✅ Storage.js loaded & Firebase connected");
-  
-  // Custom event fire karein taake app.js ko pata chale ke data load kar le
   window.dispatchEvent(new Event('firebaseReady'));
 }
