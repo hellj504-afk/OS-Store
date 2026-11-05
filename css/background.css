@@ -1,19 +1,12 @@
 /* ==========================================
-   LIVE ANIMATED BACKGROUND
-   Light theme with soft moving gradient blobs
+   RAINBOW ANIMATED BACKGROUND
    ========================================== */
-
-/* Base body background — light, airy */
 body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  color: #1f2a44;
-  background: #eef3fb;
-  overflow-x: hidden;
+  background: #050810;
+  background-image: radial-gradient(circle at 15% 50%, rgba(0, 242, 254, 0.08), transparent 25%),
+                    radial-gradient(circle at 85% 30%, rgba(240, 147, 251, 0.08), transparent 25%);
 }
 
-/* Canvas container for blobs */
 .bg-canvas {
   position: fixed;
   inset: 0;
@@ -22,94 +15,32 @@ body {
   pointer-events: none;
 }
 
-/* Each blob — soft glowing circle */
 .blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.65;
-  animation: floatBlob 18s ease-in-out infinite;
-  will-change: transform;
-}
-
-/* Blob 1 — blue */
-.blob-1 {
-  width: 520px;
-  height: 520px;
-  top: -120px;
-  left: -100px;
-  background: radial-gradient(circle, #8ab6ff 0%, #4d84f7 100%);
-  animation-duration: 20s;
-}
-
-/* Blob 2 — purple */
-.blob-2 {
-  width: 460px;
-  height: 460px;
-  top: 10%;
-  right: -140px;
-  background: radial-gradient(circle, #d9b8ff 0%, #9b6bff 100%);
-  animation-duration: 24s;
-  animation-delay: -4s;
-}
-
-/* Blob 3 — teal/cyan */
-.blob-3 {
-  width: 480px;
-  height: 480px;
-  bottom: -140px;
-  left: 20%;
-  background: radial-gradient(circle, #a7f0e4 0%, #4dd6c0 100%);
-  animation-duration: 22s;
-  animation-delay: -8s;
-}
-
-/* Blob 4 — pink */
-.blob-4 {
-  width: 400px;
-  height: 400px;
-  bottom: 10%;
-  right: 15%;
-  background: radial-gradient(circle, #ffc7e0 0%, #ff8fc4 100%);
-  animation-duration: 26s;
-  animation-delay: -12s;
+  filter: blur(100px);
   opacity: 0.5;
+  animation: floatBlob 20s ease-in-out infinite alternate;
 }
 
-/* Floating motion */
+.blob-1 { width: 500px; height: 500px; top: -10%; left: -10%; background: #00f2fe; animation-duration: 25s; }
+.blob-2 { width: 400px; height: 400px; bottom: -10%; right: -10%; background: #f093fb; animation-duration: 30s; animation-delay: -5s; }
+.blob-3 { width: 350px; height: 350px; top: 40%; left: 30%; background: #4facfe; animation-duration: 22s; animation-delay: -10s; }
+.blob-4 { width: 300px; height: 300px; top: 10%; right: 20%; background: #f5576c; animation-duration: 28s; opacity: 0.3; }
+.blob-5 { width: 450px; height: 450px; bottom: 20%; left: 10%; background: #ffb347; animation-duration: 35s; opacity: 0.2; }
+
 @keyframes floatBlob {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  25% {
-    transform: translate(40px, -30px) scale(1.08);
-  }
-  50% {
-    transform: translate(-30px, 40px) scale(0.95);
-  }
-  75% {
-    transform: translate(30px, 30px) scale(1.05);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(50px, -50px) scale(1.1); }
+  66% { transform: translate(-30px, 30px) scale(0.9); }
+  100% { transform: translate(20px, 20px) scale(1); }
 }
 
-/* Subtle grid overlay for glass depth */
 .bg-grid {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(120, 150, 200, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 150, 200, 0.06) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
-}
-
-/* Reduced motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .blob {
-    animation: none;
-  }
-}
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+     }
