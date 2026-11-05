@@ -4,8 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreOS — Inventory Workspace</title>
+
+<!-- PDF & Excel Parsers -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<!-- 3D Icons (IconScout Free 3D Icons) -->
+<link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+
 <link rel="stylesheet" href="css/background.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/components.css">
@@ -18,48 +24,72 @@
 </div>
 
 <div class="shell">
-  <aside class="sidebar">
-    <div class="brand"><div class="logo glass-effect">◈</div><div>StoreOS <small>INVENTORY WORKSPACE</small></div></div>
+  <aside class="sidebar glass-effect">
+    <div class="brand">
+      <div class="logo">◈</div>
+      <div>StoreOS <small>INVENTORY WORKSPACE</small></div>
+    </div>
     <div class="nav-label">WORKSPACE</div>
     <nav class="nav" id="nav">
-      <button class="active glass-effect" data-page="dashboard"><span class="ico">⌂</span> Dashboard</button>
-      <button class="glass-effect" data-page="inventory"><span class="ico">▦</span> Custom Inventory</button>
-      <button class="glass-effect" data-page="slow_moving"><span class="ico">◷</span> Slow Moving</button>
-      <button class="glass-effect" data-page="bom"><span class="ico">☷</span> BOM Management</button>
-      <button class="glass-effect" data-page="issue"><span class="ico">⇧</span> Issue Voucher</button>
-      <button class="glass-effect" data-page="ir"><span class="ico">⇩</span> IR / Move Order</button>
-      <button class="glass-effect" data-page="failure"><span class="ico">⚠</span> Failure & Scrap</button>
-      <button class="glass-effect" data-page="alerts"><span class="ico">⚠</span> Low Stock Alerts</button>
-      <button class="glass-effect" data-page="pdf"><span class="ico">▤</span> PDF / Excel Import</button>
+      <button class="active" data-page="dashboard"><i class="uil uil-apps"></i> Dashboard</button>
+      <button data-page="inventory"><i class="uil uil-box"></i> Custom Inventory</button>
+      <button data-page="slow_moving"><i class="uil uil-hourglass"></i> Slow Moving</button>
+      <button data-page="bom"><i class="uil uil-layer-group"></i> BOM Management</button>
+      <button data-page="issue"><i class="uil uil-upload"></i> Issue Voucher</button>
+      <button data-page="ir"><i class="uil uil-download"></i> IR / Move Order</button>
+      <button data-page="failure"><i class="uil uil-exclamation-triangle"></i> Failure & Scrap</button>
+      <button data-page="alerts"><i class="uil uil-bell"></i> Low Stock Alerts</button>
+      <button data-page="pdf"><i class="uil uil-file-import"></i> PDF / Excel Import</button>
     </nav>
-    <div class="side-bottom glass-effect"><strong>✧ Cloud workspace</strong>Data is synced to Firebase.</div>
   </aside>
 
   <main>
     <header class="topbar glass-effect">
       <div><div class="eyebrow">STORE OPERATIONS / OVERVIEW</div><h1 id="headerTitle">Dashboard</h1></div>
-      <div class="top-actions"><div class="date-pill" id="todayDate">—</div><div class="avatar glass-effect">S</div></div>
+      <div class="top-actions"><div class="date-pill" id="todayDate">—</div><div class="avatar">S</div></div>
     </header>
 
-    <!-- DASHBOARD (Animated Icons) -->
+    <!-- DASHBOARD (Sirf 4 Cards + Quote) -->
     <section id="page-dashboard" class="section-page active">
-      <div class="stats">
-        <div class="stat glass-effect stat-icon-anim"><div class="stat-top"><div class="stat-icon">▦</div><span class="trend">LIVE</span></div><div class="stat-label">Total Items</div><div class="stat-value" id="statItems">0</div></div>
-        <div class="stat glass-effect stat-icon-anim"><div class="stat-top"><div class="stat-icon">◉</div><span class="trend">QTY</span></div><div class="stat-label">Total Quantity</div><div class="stat-value" id="statQty">0</div></div>
-        <div class="stat glass-effect stat-icon-anim danger-blink"><div class="stat-top"><div class="stat-icon">⚠</div><span class="trend" style="background:#ffe5e5;color:#c93a4d">ALERT</span></div><div class="stat-label">Low Stock Items</div><div class="stat-value" id="statAlerts" style="color:#c93a4d">0</div></div>
-        <div class="stat glass-effect stat-icon-anim"><div class="stat-top"><div class="stat-icon">✧</div><span class="trend">VALUE</span></div><div class="stat-label">Total Value</div><div class="stat-value" id="statValue" style="font-size:18px">Rs. 0</div></div>
+      <!-- Motivation Quote Bar -->
+      <div class="quote-bar glass-effect" id="quoteBar">
+        <span>💡 Loading daily motivation...</span>
       </div>
-      <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Inventory Overview</h3></div><button class="primary">＋ Add Item</button></div>
-        <div class="search-row"><div class="search"><span>⌕</span><input id="dashSearch" placeholder="Search..." oninput="renderDashboardTable()"></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="dashTable"></tbody></table></div>
+
+      <div class="stats">
+        <div class="stat glass-effect">
+          <div class="stat-icon">📦</div>
+          <div class="stat-label">Total Items</div>
+          <div class="stat-value" id="statItems">0</div>
+        </div>
+        <div class="stat glass-effect">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-label">Low Stock</div>
+          <div class="stat-value" id="statAlerts" style="color:#c93a4d">0</div>
+        </div>
+        <div class="stat glass-effect">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Total Cost</div>
+          <div class="stat-value" id="statValue" style="font-size:18px">Rs. 0</div>
+        </div>
+        <div class="stat glass-effect">
+          <div class="stat-icon">📊</div>
+          <div class="stat-label">Total Quantity</div>
+          <div class="stat-value" id="statQty">0</div>
+        </div>
       </div>
     </section>
 
     <!-- INVENTORY -->
     <section id="page-inventory" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Custom Inventory</h3></div><div><button class="danger" onclick="clearSection('inventory', this)">Clear All</button><button class="primary" onclick="openItemModal()">＋ Add</button></div></div>
+        <div class="panel-head">
+          <div><h3>Custom Inventory</h3></div>
+          <div>
+            <button class="danger water-btn" onclick="clearSection('inventory', this)">Clear All</button>
+            <button class="primary" onclick="openItemModal()">＋ Add</button>
+          </div>
+        </div>
         <div class="search-row"><div class="search"><span>⌕</span><input id="invSearch" placeholder="Search..." oninput="renderInventory()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
       </div>
@@ -68,7 +98,10 @@
     <!-- SLOW MOVING -->
     <section id="page-slow_moving" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Slow Moving</h3></div><div><button class="danger" onclick="clearSection('slow_moving', this)">Clear</button></div></div>
+        <div class="panel-head">
+          <div><h3>Slow Moving</h3></div>
+          <div><button class="danger water-btn" onclick="clearSection('slow_moving', this)">Clear</button></div>
+        </div>
         <div class="search-row"><div class="search"><span>⌕</span><input id="slowSearch" placeholder="Search..." oninput="renderSlowMoving()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Stock Qty</th><th>Rate</th><th>Value</th></tr></thead><tbody id="slowTable"></tbody></table></div>
       </div>
@@ -77,8 +110,18 @@
     <!-- BOM -->
     <section id="page-bom" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>BOM Management</h3></div><div><button class="danger" onclick="clearSection('bom', this)">Clear BOM</button></div></div>
-        <div class="search-row"><div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div><select class="filter" id="bomFilterType" onchange="renderBOM()"><option value="all">All Types</option><option value="pre_assembly">Pre Assembly</option><option value="final_assembly">Final Assembly</option><option value="bom">BOM Detail</option></select></div>
+        <div class="panel-head">
+          <div><h3>BOM Management</h3></div>
+          <div><button class="danger water-btn" onclick="clearSection('bom', this)">Clear BOM</button></div>
+        </div>
+        <div class="search-row"><div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div>
+          <select class="filter" id="bomFilterType" onchange="renderBOM()">
+            <option value="all">All Types</option>
+            <option value="pre_assembly">Pre Assembly</option>
+            <option value="final_assembly">Final Assembly</option>
+            <option value="bom">BOM Detail</option>
+          </select>
+        </div>
         <div class="table-wrap"><table><thead><tr><th>Type</th><th>Parent (FG/WIP)</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div>
       </div>
     </section>
@@ -86,7 +129,7 @@
     <!-- ISSUE -->
     <section id="page-issue" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Issue Voucher</h3></div><div><button class="danger" onclick="clearSection('issue_voucher', this)">Clear</button></div></div>
+        <div class="panel-head"><div><h3>Issue Voucher</h3></div><div><button class="danger water-btn" onclick="clearSection('issue_voucher', this)">Clear</button></div></div>
         <div class="search-row"><div class="search"><span>⌕</span><input id="issueSearch" placeholder="Search..." oninput="renderIssue()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div>
       </div>
@@ -95,20 +138,20 @@
     <!-- IR -->
     <section id="page-ir" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>IR / Move Order</h3></div><div><button class="danger" onclick="clearSection('ir_voucher', this)">Clear</button></div></div>
+        <div class="panel-head"><div><h3>IR / Move Order</h3></div><div><button class="danger water-btn" onclick="clearSection('ir_voucher', this)">Clear</button></div></div>
         <div class="search-row"><div class="search"><span>⌕</span><input id="irSearch" placeholder="Search..." oninput="renderIR()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- FAILURE (Blast Animation) -->
+    <!-- FAILURE -->
     <section id="page-failure" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Scrap / Failure</h3></div><div><button class="danger" onclick="clearSection('failure', this)">Clear</button></div></div>
+        <div class="panel-head"><div><h3>Scrap / Failure</h3></div><div><button class="danger water-btn" onclick="clearSection('failure', this)">Clear</button></div></div>
         <div class="form-grid" style="margin-bottom:20px; padding:15px;">
           <div class="field"><label>FG Code</label><input id="failCode" placeholder="Enter FG Code"></div>
           <div class="field"><label>Failure Qty</label><input id="failQty" type="number" step="0.01" placeholder="0.00"></div>
-          <div class="field full" style="display:flex; justify-content:flex-end;"><button class="primary blast-btn" onclick="calculateFailure(this)">🔍 Detect Material & Cost</button></div>
+          <div class="field full" style="display:flex; justify-content:flex-end;"><button class="primary water-btn" onclick="calculateFailure(this)">🔍 Detect Material & Cost</button></div>
         </div>
         <div id="failureResultArea" style="display:none; margin-top:20px;">
           <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><h4 style="margin:0;">Required Materials (BOM)</h4><h4 style="margin:0; color:#c93a4d;">Total: <span id="failTotalCost">Rs. 0</span></h4></div>
@@ -120,29 +163,46 @@
     <!-- LOW STOCK -->
     <section id="page-alerts" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>⚠ Low Stock Alerts</h3></div><div><button class="danger" onclick="clearSection('inventory', this)">Clear Inventory</button></div></div>
+        <div class="panel-head"><div><h3>⚠ Low Stock Alerts</h3></div><div><button class="danger water-btn" onclick="clearSection('inventory', this)">Clear Inventory</button></div></div>
         <div class="search-row"><div class="search"><span>⌕</span><input id="alertSearch" placeholder="Search..." oninput="renderAlerts()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- PDF IMPORT (1-100% Animation) -->
+    <!-- PDF IMPORT -->
     <section id="page-pdf" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>📄 PDF & Excel Import</h3></div></div>
-        <div class="form-grid" style="margin-bottom:16px"><div class="field"><label>1. Select Import Type</label><select id="importType"><option value="inventory">Inventory</option><option value="slow_moving">Slow Moving</option><option value="pre_assembly">Pre Assembly</option><option value="final_assembly">Final Assembly</option><option value="bom">BOM Detail</option><option value="issue_voucher">Issue Voucher</option><option value="ir_voucher">IR / Move Order</option><option value="failure">Failure</option></select></div></div>
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="field"><label>Select Type</label>
+            <select id="importType">
+              <option value="inventory">Inventory</option>
+              <option value="slow_moving">Slow Moving</option>
+              <option value="pre_assembly">Pre Assembly</option>
+              <option value="final_assembly">Final Assembly</option>
+              <option value="bom">BOM Detail</option>
+              <option value="issue_voucher">Issue Voucher</option>
+              <option value="ir_voucher">IR / Move Order</option>
+              <option value="failure">Failure</option>
+            </select>
+          </div>
+        </div>
         <div class="field" style="margin-bottom:16px"><label style="display:flex; align-items:center; gap:8px; cursor:pointer; color: #c93a4d; font-weight: bold;"><input type="checkbox" id="chkDeleteOld" style="width:auto; transform:scale(1.2);"> Purana Data Delete karein</label></div>
         <div class="import-box glass-effect" onclick="document.getElementById('pdfFile').click()">
-          <div style="font-size:36px;margin-bottom:10px">📄</div><div style="font-weight:700;font-size:14px">Click to select PDF or CSV</div>
+          <div style="font-size:36px;margin-bottom:10px">📄</div>
+          <div style="font-weight:700;font-size:14px">Click to select PDF or CSV</div>
           <input type="file" id="pdfFile" accept=".pdf, .csv" style="display:none" onchange="handleFileUpload(event)">
         </div>
         <div id="pdfStatus" class="pdf-status"></div>
+        
+        <!-- Progress Bar -->
         <div id="importProgressBar" style="display:none; margin-top:15px; width:100%; height:10px; background:rgba(255,255,255,0.2); border-radius:10px; overflow:hidden;">
           <div id="importProgressFill" style="width:0%; height:100%; background:linear-gradient(90deg, #3b8cff, #a653ff); transition: width 0.1s;"></div>
         </div>
         <div id="importProgressText" style="display:none; text-align:center; font-size:12px; margin-top:5px; font-weight:bold; color:var(--blue);">0%</div>
+        
         <div id="previewArea" style="display:none; margin-top:20px;">
-          <div class="preview-head"><strong>Preview: <span id="previewCount">0</span> rows</strong><button class="primary" onclick="confirmImport(this)">✓ Import Now</button></div>
+          <div class="preview-head"><strong>Preview: <span id="previewCount">0</span> rows</strong><button class="primary water-btn" onclick="confirmImport(this)">✓ Import Now</button></div>
           <div class="table-wrap" style="max-height:420px;overflow:auto"><table><thead><tr><th>Parent</th><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table></div>
         </div>
       </div>
@@ -150,10 +210,12 @@
   </main>
 </div>
 
-<div class="modal" id="itemModal"><div class="modal-card glass-effect"><div class="modal-head"><h3>Add / Edit Item</h3><button class="close" onclick="closeItemModal()">×</button></div><div class="form-grid"><div class="field"><label>Item Code *</label><input id="fCode"></div><div class="field"><label>Sub Inv</label><input id="fSubInv"></div><div class="field"><label>UOM</label><input id="fUom"></div><div class="field"><label>Quantity</label><input id="fQty" type="number" step="0.01"></div><div class="field"><label>Cost</label><input id="fCost" type="number" step="0.01"></div><div class="field full"><label>Description</label><input id="fDesc"></div></div><div class="modal-actions"><button class="secondary" onclick="closeItemModal()">Cancel</button><button class="primary" onclick="saveItem()">Save Item</button></div></div></div>
+<!-- MODAL -->
+<div class="modal" id="itemModal"><div class="modal-card glass-effect"><div class="modal-head"><h3>Add / Edit Item</h3><button class="close" onclick="closeItemModal()">×</button></div><div class="form-grid"><div class="field"><label>Item Code *</label><input id="fCode"></div><div class="field"><label>Sub Inv</label><input id="fSubInv"></div><div class="field"><label>UOM</label><input id="fUom"></div><div class="field"><label>Quantity</label><input id="fQty" type="number" step="0.01"></div><div class="field"><label>Cost</label><input id="fCost" type="number" step="0.01"></div><div class="field full"><label>Description</label><input id="fDesc"></div></div><div class="modal-actions"><button class="secondary" onclick="closeItemModal()">Cancel</button><button class="primary water-btn" onclick="saveItem()">Save Item</button></div></div></div>
 
 <div class="toast" id="toast"></div>
 
+<!-- Scripts -->
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/storage.js"></script>
 <script src="js/utils.js"></script>
@@ -163,4 +225,4 @@
 <script src="js/bom.js"></script>
 <script src="js/app.js"></script>
 </body>
-  </html>
+</html>
