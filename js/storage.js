@@ -58,24 +58,25 @@ function initStorage(db) {
     }
   };
 
-  // 4. Bulk Save (PDF/Excel Import ke liye) - FIXED
+  // 4. Bulk Save (PDF/Excel Import ke liye)
   window.bulkSaveToFirebase = async function(itemsArray) {
     try {
       let count = 0;
       for (const item of itemsArray) {
-        // Har item ko uske code se save karein (taake duplicate na ho)
         const itemRef = doc(db, COLLECTION_NAME, item.code);
         await setDoc(itemRef, item);
         count++;
       }
-      return count; // Kitne items save hue wo return karega
+      return count;
     } catch (e) {
       console.error("Error bulk saving: ", e);
-      throw e; // Error throw karein taake UI mein pata chale
+      throw e;
     }
   };
 
   window.firebaseReady = true;
   console.log("✅ Storage.js loaded & Firebase connected");
+  
+  // Custom event fire karein
   window.dispatchEvent(new Event('firebaseReady'));
 }
