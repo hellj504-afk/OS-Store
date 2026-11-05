@@ -1,5 +1,5 @@
 // ==========================================
-// BOM.JS — Filter & Multi-Level Failure Logic
+// BOM.JS — BOM View & Failure Calc
 // ==========================================
 
 window.renderBOM = async function() {
@@ -12,10 +12,11 @@ window.renderBOM = async function() {
 
   try {
     const allData = await window.loadInventoryFromFirebase();
+    // Sirf BOM/Assembly data filter karein
     const bomData = allData.filter(item => item.source && (item.source.includes('bom') || item.source.includes('assembly')));
 
     if (bomData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty">No BOM data found. Upload Pre/Assembly/BOM PDFs.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">No BOM data found. Please upload BOM PDF/Excel.</td></tr>`;
       return;
     }
 
@@ -127,9 +128,13 @@ window.reuseMaterial = async function(code, qty) {
       showToast(`${qty} qty successfully reused!`, 'success');
       await window.refreshInventoryData();
     } else {
-      showToast('Item not found in inventory to update.', 'error');
+      showToast('Original inventory item not found.', 'error');
     }
   } catch (err) {
     showToast('Reuse failed: ' + err.message, 'error');
   }
 };
+
+// Baki placeholders
+window.renderIssue = function() { document.getElementById('issueTable').innerHTML = `<tr><td colspan="3" class="empty">Issue Voucher data will show here.</td></tr>`; };
+window.renderIR = function() { document.getElementById('irTable').innerHTML = `<tr><td colspan="3" class="empty">IR / Move Order data will show here.</td></tr>`; };
