@@ -88,4 +88,112 @@ window.clearSection = async function(type, btn) {
       
       const percent = Math.round((count / total) * 100);
       
-      if (btn
+      if (btn) {
+        btn.textContent = `${percent}%`;
+        // Update water fill level
+        btn.style.setProperty('--fill-level', `${percent}%`);
+        btn.style.backgroundImage = `linear-gradient(to top, rgba(0, 242, 254, 0.8) ${percent}%, transparent ${percent}%)`;
+      }
+    }
+    
+    showToast(`${total} items cleared successfully!`, 'success');
+    await refreshInventoryData();
+
+  } catch (err) {
+    showToast('Clear failed: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.textContent = origText;
+      btn.disabled = false;
+      btn.classList.remove('clearing');
+      btn.style.backgroundImage = ''; 
+    }
+  }
+};
+
+window.refreshInventoryData = async function() {
+  if (!window.loadInventoryFromFirebase) return;
+  window.inventoryData = await window.loadInventoryFromFirebase();
+  window.isDataLoaded = true;
+  if (window.renderInventory) renderInventory();
+  if (window.renderSlowMoving) renderSlowMoving();
+  if (window.renderAlerts) renderAlerts();
+  if (window.renderDashboardTable) renderDashboardTable();
+  if (window.updateDashboardStats) updateDashboardStats();
+  if (window.renderBOM) renderBOM();
+};
+
+window.renderInventory = function() {
+  const tbody = document.getElementById('inventoryTable');
+  if (!tbody) return;
+  const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
+  let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly'));
+  
+  const merged = {};
+  data.forEach(i => { 
+    const k = i.code + '_' + i.subInv; 
+    if (merged[k]) merged[k].qty += (Number(i.qty)||0); 
+    else merged[k] = { ...i, qty: Number(i.qty)||0 }; 
+  });
+
+  let final = Object.values(merged).filter(i => !query || i.code.toLowerCase().includes(query));
+  final.sort((a, b) => a.code.localeCompare(b.code));
+
+  if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
+  if (!final.length) return tbody.innerHTML = `<tr><td colspan="6" class="empty">No items found.</td></tr>`;
+
+  tbody.innerHTML = final.map(i => `
+    <tr><td class="code">${i.code}</td><td><span class="badge no">${i.subInv}</span></td><td>${i.desc}</td><td>${i.uom}</td>
+    <td style="font-weight:bold; color:var(--blue);">${formatNumber(i.qty)}</td>
+    <td><button class="glass-clear-btn" style="padding:5px 10px; font-size:10px;" onclick="deleteItem('${i.code}')">Del</button></td></tr>
+  `).join('');
+};
+
+window.renderSlowMoving = function() {
+  const tbody = document.getElementById('slowTable');
+  if (!tbody) return;
+  const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
+  let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
+  data = data.filter(i => !query || i.code.toLowerCase().includes(query));
+  
+  if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
+  if (!data.length) return tbody.innerHTML = `<tr><td colspan="6" class="empty">No slow moving items found.</td></tr>`;
+
+  tbody.innerHTML = data.map(i => {
+    const val = (Number(i.qty)||0) * (Number(i.cost)||0);
+    return `<tr><td class="code">${i.code}</td><td>${i.desc}</td><td>${i.uom}</td>
+    <td style="font-weight:bold;">${formatNumber(i.qty)}</td>
+    <td>Rs. ${formatNumber(i.cost)}</td>
+    <td style="font-weight:bold; color:#19835a;">Rs. ${formatNumber(val)}</td></tr>`;
+  }).join('');
+};
+
+window.renderAlerts = function() {
+  const tbody = document.getElementById('alertTable');
+  if (!tbody) return;
+  const query = document.getElementById('alertSearch')?.value.toLowerCase() || '';
+  
+  const merged = {};
+  window.inventoryData.forEach(i => { if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; });
+
+  let alerts = [];
+  Object.values(merged).forEach(i => {
+    const q = Number(i.qty), u = (i.uom||'NOS').toUpperCase();
+    let st = '', alert = false;
+    if (q <= 0) { alert = true; st = 'OUT OF STOCK'; }
+    else if (u === 'NOS' && q < 500) { alert = true; st = 'LOW (< 500)'; }
+    else if ((u === 'KGS' || u === 'KG') && q < 100) { alert = true; st = 'LOW (< 100)'; }
+    if (alert) alerts.push({ ...i, st });
+  });
+
+  if (query) alerts = alerts.filter(i => i.code.toLowerCase().includes(query));
+  alerts.sort((a, b) => a.qty - b.qty);
+  if (!alerts.length) return tbody.innerHTML = `<tr><td colspan="5" class="empty">All stock healthy!</td></tr>`;
+
+  tbody.innerHTML = alerts.map(i => `
+    <tr style="${i.qty <= 0 ? 'background: rgba(201,58,77,0.15)' : ''}">
+      <td class="code" style="color:#c93a4d;">${i.code}</td><td>${i.desc}</td><td>${i.uom}</td>
+      <td style="font-weight:bold; color:#c93a4d;">${formatNumber(i.qty)}</td>
+      <td><span class="badge danger" style="padding:5px 10px;">${i.st}</span></td>
+    </tr>`).join('');
+};
