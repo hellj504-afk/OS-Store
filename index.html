@@ -78,7 +78,8 @@
         <div class="panel-head">
           <div><h3>Custom Inventory</h3></div>
           <div>
-            <button class="danger" onclick="clearSection('inventory')" style="margin-right: 8px;">Clear All</button>
+            <!-- this add kiya gaya hai -->
+            <button class="danger" onclick="clearSection('inventory', this)" style="margin-right: 8px;">Clear All</button>
             <button class="primary" onclick="openItemModal()">＋ Add</button>
           </div>
         </div>
@@ -91,7 +92,8 @@
       <div class="panel">
         <div class="panel-head">
           <div><h3>Slow Moving Inventory</h3></div>
-          <div><button class="danger" onclick="clearSection('slow_moving')">Clear</button></div>
+          <!-- this add kiya gaya hai -->
+          <div><button class="danger" onclick="clearSection('slow_moving', this)">Clear</button></div>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Stock Qty</th><th>Rate</th><th>Value</th></tr></thead><tbody id="slowTable"></tbody></table></div>
       </div>
@@ -102,7 +104,8 @@
       <div class="panel">
         <div class="panel-head">
           <div><h3>BOM Management</h3></div>
-          <div><button class="danger" onclick="clearSection('bom')">Clear BOM</button></div>
+          <!-- this add kiya gaya hai -->
+          <div><button class="danger" onclick="clearSection('bom', this)">Clear BOM</button></div>
         </div>
         <div class="search-row">
           <div class="search"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div>
@@ -127,7 +130,8 @@
       <div class="panel">
         <div class="panel-head">
           <div><h3>Issue Voucher</h3></div>
-          <div><button class="danger" onclick="clearSection('issue_voucher')">Clear</button></div>
+          <!-- this add kiya gaya hai -->
+          <div><button class="danger" onclick="clearSection('issue_voucher', this)">Clear</button></div>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div>
       </div>
@@ -138,7 +142,8 @@
       <div class="panel">
         <div class="panel-head">
           <div><h3>IR / Move Order</h3></div>
-          <div><button class="danger" onclick="clearSection('ir_voucher')">Clear</button></div>
+          <!-- this add kiya gaya hai -->
+          <div><button class="danger" onclick="clearSection('ir_voucher', this)">Clear</button></div>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div>
       </div>
@@ -149,7 +154,8 @@
       <div class="panel">
         <div class="panel-head">
           <div><h3>Scrap / Failure Management</h3></div>
-          <div><button class="danger" onclick="clearSection('failure')">Clear</button></div>
+          <!-- this add kiya gaya hai -->
+          <div><button class="danger" onclick="clearSection('failure', this)">Clear</button></div>
         </div>
         
         <div class="form-grid" style="margin-bottom:20px; padding:15px;">
@@ -186,7 +192,8 @@
       <div class="panel">
         <div class="panel-head">
           <div><h3>⚠ Low & Zero Stock Alerts</h3></div>
-          <div><button class="danger" onclick="clearSection('inventory')">Clear Inventory</button></div>
+          <!-- this add kiya gaya hai -->
+          <div><button class="danger" onclick="clearSection('inventory', this)">Clear Inventory</button></div>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div>
       </div>
@@ -271,4 +278,4 @@
 <script src="js/bom.js"></script>
 <script src="js/app.js"></script>
 </body>
-        </html>
+      </html>
