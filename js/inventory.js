@@ -1,5 +1,5 @@
 // ==========================================
-// INVENTORY.JS — Fixed Clear & Exact Filter
+// INVENTORY.JS — Clear with Loading %
 // ==========================================
 
 window.inventoryData = [];
@@ -39,23 +39,28 @@ window.deleteItem = async function(code) {
 };
 
 // ==========================================
-// FIXED: CLEAR SECTION
+// CLEAR SECTION (With Loading %)
 // ==========================================
-window.clearSection = async function(type) {
+window.clearSection = async function(type, btnElement) {
   if (!confirm(`Kya aap waqai ${type.toUpperCase()} ka data clear karna chahte hain?`)) return;
   
+  // Button ko disable karein aur loading show karein
+  const originalText = btnElement ? btnElement.textContent : 'Clear';
+  if (btnElement) {
+    btnElement.disabled = true;
+    btnElement.textContent = '0% Clearing...';
+    btnElement.style.background = '#c93a4d'; // Red color to show it's working
+  }
+
   try {
     const allData = await window.loadInventoryFromFirebase();
-    let count = 0;
+    let itemsToDelete = [];
     
+    // Pehle filter karein ke konsa data delete karna hai
     for (const item of allData) {
       let shouldDelete = false;
-      
-      // Strict check based on source
       if (type === 'inventory') {
-         if (!item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving'))) {
-            shouldDelete = true;
-         }
+         if (!item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving'))) shouldDelete = true;
       } 
       else if (type === 'slow_moving') {
          if (item.source && item.source.includes('slow_moving')) shouldDelete = true;
@@ -66,15 +71,37 @@ window.clearSection = async function(type) {
       else {
          if (item.source && item.source.includes(type)) shouldDelete = true;
       }
+      
+      if (shouldDelete) itemsToDelete.push(item);
+    }
 
-      if (shouldDelete) {
-        // Await zaroori hai taake delete complete hone ka wait kare
-        await window.deleteItemFromFirebase(item.id || item.code); 
-        count++;
+    const total = itemsToDelete.length;
+    if (total === 0) {
+      showToast('No data found to clear.', 'default');
+      if (btnElement) {
+        btnElement.textContent = originalText;
+        btnElement.disabled = false;
+        btnElement.style.background = ''; // Reset color
+      }
+      return;
+    }
+
+    // Ab ek ek kar ke delete karein aur percentage update karein
+    let count = 0;
+    for (const item of itemsToDelete) {
+      await window.deleteItemFromFirebase(item.id || item.code);
+      count++;
+      
+      // Percentage calculate karein
+      const percent = Math.round((count / total) * 100);
+      
+      // Button mein update karein
+      if (btnElement) {
+        btnElement.textContent = `${percent}% Clearing...`;
       }
     }
     
-    showToast(`${count} items cleared successfully!`, 'success');
+    showToast(`${total} items cleared successfully!`, 'success');
     
     // UI ko update karein
     await refreshInventoryData();
@@ -83,6 +110,13 @@ window.clearSection = async function(type) {
 
   } catch (err) {
     showToast('Clear failed: ' + err.message, 'error');
+  } finally {
+    // Kaam khatam hone par button ko wapas normal karein
+    if (btnElement) {
+      btnElement.textContent = originalText;
+      btnElement.disabled = false;
+      btnElement.style.background = ''; // Default color
+    }
   }
 };
 
@@ -103,7 +137,6 @@ window.renderInventory = function() {
   if (!tbody) return;
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
   
-  // Normal Inventory Filter
   let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly'));
   
   const merged = {};
@@ -126,15 +159,11 @@ window.renderInventory = function() {
   `).join('');
 };
 
-// ==========================================
-// FIXED: SLOW MOVING FILTER
-// ==========================================
 window.renderSlowMoving = function() {
   const tbody = document.getElementById('slowTable');
   if (!tbody) return;
   const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
   
-  // Strict Filter: Sirf slow_moving data
   let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
   data = data.filter(i => !query || i.code.toLowerCase().includes(query));
   
