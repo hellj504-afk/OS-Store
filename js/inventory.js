@@ -1,5 +1,5 @@
 // ==========================================
-// INVENTORY.JS — Fixed Clear & View
+// INVENTORY.JS — Fixed Clear & Exact Filter
 // ==========================================
 
 window.inventoryData = [];
@@ -38,24 +38,52 @@ window.deleteItem = async function(code) {
   if (await window.deleteItemFromFirebase(code)) { showToast('Deleted!', 'success'); await refreshInventoryData(); }
 };
 
+// ==========================================
+// FIXED: CLEAR SECTION
+// ==========================================
 window.clearSection = async function(type) {
-  if (!confirm(`Clear ${type.toUpperCase()} data?`)) return;
+  if (!confirm(`Kya aap waqai ${type.toUpperCase()} ka data clear karna chahte hain?`)) return;
+  
   try {
     const allData = await window.loadInventoryFromFirebase();
     let count = 0;
+    
     for (const item of allData) {
-      let del = false;
-      if (type === 'inventory' && (!item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving')))) del = true;
-      else if (type === 'slow_moving' && item.source?.includes('slow_moving')) del = true;
-      else if (type === 'bom' && (item.source?.includes('bom') || item.source?.includes('assembly'))) del = true;
-      else if (item.source?.includes(type)) del = true;
+      let shouldDelete = false;
+      
+      // Strict check based on source
+      if (type === 'inventory') {
+         if (!item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving'))) {
+            shouldDelete = true;
+         }
+      } 
+      else if (type === 'slow_moving') {
+         if (item.source && item.source.includes('slow_moving')) shouldDelete = true;
+      }
+      else if (type === 'bom') {
+         if (item.source && (item.source.includes('bom') || item.source.includes('assembly'))) shouldDelete = true;
+      }
+      else {
+         if (item.source && item.source.includes(type)) shouldDelete = true;
+      }
 
-      if (del) { await window.deleteItemFromFirebase(item.id || item.code); count++; }
+      if (shouldDelete) {
+        // Await zaroori hai taake delete complete hone ka wait kare
+        await window.deleteItemFromFirebase(item.id || item.code); 
+        count++;
+      }
     }
-    showToast(`${count} items cleared!`, 'success');
+    
+    showToast(`${count} items cleared successfully!`, 'success');
+    
+    // UI ko update karein
     await refreshInventoryData();
     if (window.renderBOM) window.renderBOM();
-  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+    if (window.renderSlowMoving) window.renderSlowMoving();
+
+  } catch (err) {
+    showToast('Clear failed: ' + err.message, 'error');
+  }
 };
 
 window.refreshInventoryData = async function() {
@@ -67,13 +95,15 @@ window.refreshInventoryData = async function() {
   if (window.renderAlerts) renderAlerts();
   if (window.renderDashboardTable) renderDashboardTable();
   if (window.updateDashboardStats) updateDashboardStats();
-  if (window.renderBOM && document.getElementById('page-bom').classList.contains('active')) renderBOM();
+  if (window.renderBOM) renderBOM();
 };
 
 window.renderInventory = function() {
   const tbody = document.getElementById('inventoryTable');
   if (!tbody) return;
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
+  
+  // Normal Inventory Filter
   let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly'));
   
   const merged = {};
@@ -96,17 +126,20 @@ window.renderInventory = function() {
   `).join('');
 };
 
+// ==========================================
+// FIXED: SLOW MOVING FILTER
+// ==========================================
 window.renderSlowMoving = function() {
   const tbody = document.getElementById('slowTable');
   if (!tbody) return;
   const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
   
-  // FIX: Sirf slow_moving data
+  // Strict Filter: Sirf slow_moving data
   let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
   data = data.filter(i => !query || i.code.toLowerCase().includes(query));
   
   if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
-  if (!data.length) return tbody.innerHTML = `<tr><td colspan="6" class="empty">No slow moving items.</td></tr>`;
+  if (!data.length) return tbody.innerHTML = `<tr><td colspan="6" class="empty">No slow moving items found.</td></tr>`;
 
   tbody.innerHTML = data.map(i => {
     const val = (Number(i.qty)||0) * (Number(i.cost)||0);
