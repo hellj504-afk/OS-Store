@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Fixed Cost & Parsing
+// PDF-IMPORT.JS — Exact Cost Fix for Slow Moving
 // ==========================================
 
 window.importedRows = [];
@@ -72,6 +72,7 @@ async function handlePDF(file) {
              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
              allRows.push(currentItem);
              
+             // Slow Moving specific parser
              if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
              else parseNormalLine(line.words, currentItem);
            } else if (currentItem) {
@@ -147,29 +148,26 @@ function parseNormalLine(words, item) {
   if (uomI !== -1) {
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code && !t.startsWith('P02-')).join(' ');
     let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-    if (nums.length > 0) item.qty = nums[nums.length - 1]; // Closing Qty
+    if (nums.length > 0) item.qty = nums[nums.length - 1]; 
   } else {
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.text.startsWith('P02-')).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
-// ✅ EXACT COST FIX FOR SLOW MOVING
+// ✅ SLOW MOVING COST FIX (Yeh asal mein cost uthata hai)
 function parseSlowLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   
-  // 1. Find UOM index
   for (let i = 0; i < words.length; i++) {
     if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
   }
 
   if (uomI !== -1) {
-    // 2. Extract Description
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
     
-    // 3. Extract Numbers after UOM
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
       if (numR.test(words[i].text)) {
@@ -177,17 +175,11 @@ function parseSlowLine(words, item) {
       }
     }
     
-    // 4. Assign Qty & Cost
-    // Usually Format: [Stock Qty] [Rate] [Value] [Days]...
-    if (nums.length >= 2) {
-       item.qty = nums[0];
-       item.cost = nums[1];
-    } else if (nums.length === 1) {
-       item.qty = nums[0];
-    }
+    // Asal format: Qty (pehla), Rate/Cost (dusra)
+    if (nums.length >= 1) item.qty = nums[0]; 
+    if (nums.length >= 2) item.cost = nums[1]; 
     
   } else {
-    // If UOM not found on this line (description continuation)
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
@@ -209,7 +201,7 @@ window.confirmImport = async function(btnElement) {
   if (progressText) progressText.textContent = '0%';
 
   try {
-    // Clear old data if checkbox is checked
+    // Check if we need to clear old data
     if (document.getElementById('chkDeleteOld')?.checked) {
       if (progressText) progressText.textContent = 'Clearing old data...';
       const allData = await window.loadInventoryFromFirebase();
