@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Column Based Exact Cost Reader
+// PDF-IMPORT.JS — Final with Store Logic
 // ==========================================
 
 window.importedRows = [];
@@ -31,7 +31,6 @@ async function handlePDF(file) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
       
-      // Extract words with X and Y coordinates
       const words = content.items.map(it => ({ 
         text: String(it.str || '').trim(), 
         x: it.transform[4], 
@@ -133,21 +132,21 @@ function finalizeData(allRows, importType) {
   statusDiv.className = 'pdf-status success';
 }
 
-function parseBOMLine(words, item) {
+function parseBOMLine(words, item) { /* Same as before */ 
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
   if (uomI !== -1) {
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => !numR.test(t) && t !== item.code).join(' ');
     let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-    if (nums.length > 0) item.qty = nums[0]; // Net Qty is first number
+    if (nums.length > 0) item.qty = nums[0]; 
   } else {
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
-function parseNormalLine(words, item) {
+function parseNormalLine(words, item) { /* Same as before */
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
@@ -161,38 +160,18 @@ function parseNormalLine(words, item) {
   }
 }
 
-// ✅ ADVANCED SLOW MOVING PARSER (Exact Column Detection)
-function parseSlowLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
-  const numR = /^[\d,]+\.?\d*$/;
+function parseSlowLine(words, item) { /* Slow Moving Rate Detection */
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
-  
-  // 1. Find UOM
-  for (let i = 0; i < words.length; i++) {
-    if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
-  }
-
+  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
   if (uomI !== -1) {
-    // 2. Description
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
-    
-    // 3. Extract Numbers after UOM (Strictly by order)
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
-      if (numR.test(words[i].text)) {
-        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-      }
+      if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    
-    // Asal PDF Pattern: [Stock] [Rate] [Value]
-    // Pehla number Stock hai, Dusra number Rate (Cost) hai
-    if (nums.length >= 1) item.qty = nums[0]; // Stock Qty
-    if (nums.length >= 2) item.cost = nums[1]; // Rate (Cost)
-    
-    // Agar PDF mein Stock 0 hai (jaise page 2 par kuch items ki hai), 
-    // toh humein sure karna hai ke hum Rate miss na karein.
-    // Lekin aam tor par ye logic kaam karta hai.
-    
+    if (nums.length >= 1) item.qty = nums[0]; 
+    if (nums.length >= 2) item.cost = nums[1]; 
   } else {
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
@@ -200,6 +179,7 @@ function parseSlowLine(words, item) {
 }
 
 window.confirmImport = async function(btnElement) {
+  // Same as before, saving with source `PDF (${importType})`
   if (!window.importedRows.length) return showToast('No data to import!', 'error');
   const importType = document.getElementById('importType').value;
   const progressBar = document.getElementById('importProgressBar');
@@ -219,9 +199,7 @@ window.confirmImport = async function(btnElement) {
       if (progressText) progressText.textContent = 'Clearing old data...';
       const allData = await window.loadInventoryFromFirebase();
       for (const item of allData) {
-        if (item.source && item.source.includes(importType)) {
-          await window.deleteItemFromFirebase(item.id || item.code);
-        }
+        if (item.source && item.source.includes(importType)) await window.deleteItemFromFirebase(item.id || item.code);
       }
     }
 
