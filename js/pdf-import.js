@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Clean Description & 15-Char Cost Sync
+// PDF-IMPORT.JS — Alphabet-Only Description
 // ==========================================
 
 window.importedRows = [];
@@ -93,30 +93,26 @@ async function handlePDF(file) {
   }
 }
 
-// ✅ Clean Description & 15-Char Cost Sync
+// ✅ Description Cleaner & 15-Char Cost Sync
 async function finalizeData(allRows, importType) {
   const map = {};
+  
   allRows.forEach(r => {
-    // 1. Clean description (remove extra spaces)
-    r.desc = r.desc.replace(/\s+/g, ' ').trim();
+    // 1. CLEAN DESCRIPTION: Remove numbers like 002, 200, P02 from start
+    let cleanDesc = r.desc.replace(/^['"]?\d{3}\s+/, ''); 
+    cleanDesc = cleanDesc.replace(/^P02[-\s]\S+\s+/, ''); 
+    cleanDesc = cleanDesc.replace(/[\d,]+/g, ''); // Remove any numbers inside desc
+    cleanDesc = cleanDesc.replace(/\s+/g, ' ').trim(); // Remove extra spaces
     
-    // 2. Extract '002' or similar from description and move to Sub Inv
-    if (!importType.includes('bom') && !importType.includes('assembly') && (r.subInv === 'N/A' || !r.subInv)) {
-      const m = r.desc.match(/^'?(\d{3})\s+(.*)/);
-      if (m) { 
-        r.subInv = m[1]; 
-        r.desc = m[2]; // Remove the 002 from description
-      }
-    }
-    
-    // 3. Merge rows (same code + same parent)
+    r.desc = cleanDesc;
+
+    // 2. Merge
     const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
     if (map[key]) { 
       map[key].qty += r.qty; 
       if(r.cost > 0) map[key].cost = r.cost;
-    } else {
-      map[key] = r;
     }
+    else map[key] = r;
   });
   
   window.importedRows = Object.values(map);
@@ -125,11 +121,10 @@ async function finalizeData(allRows, importType) {
   if (importType === 'slow_moving') {
     try {
       const existingData = await window.loadInventoryFromFirebase();
-      
       const costMap = {};
       window.importedRows.forEach(r => {
          if (r.cost > 0) {
-            const shortCode = r.code.substring(0, 15); // First 15 chars
+            const shortCode = r.code.substring(0, 15);
             costMap[shortCode] = Number(r.cost);
          }
       });
@@ -173,6 +168,7 @@ async function finalizeData(allRows, importType) {
   statusDiv.className = 'pdf-status success';
 }
 
+// Parse functions (Same as before)
 function parseBOMLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
