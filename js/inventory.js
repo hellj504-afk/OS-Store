@@ -1,20 +1,23 @@
 // ==========================================
-// INVENTORY.JS — Clear with Water Fill
+// INVENTORY.JS — Manual Add & Filters
 // ==========================================
 
 window.inventoryData = [];
 window.isDataLoaded = false;
 
-window.openItemModal = function() {
+window.openManualAdd = function(type) {
   document.getElementById('itemModal').classList.add('open');
-  ['fCode','fSubInv','fUom','fDesc','fQty','fCost'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mType').value = type;
+  ['fCode','fSubInv','fUom','fDesc','fQty','fCost','fParent'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fCode').focus();
 };
 window.closeItemModal = function() { document.getElementById('itemModal').classList.remove('open'); };
 
-window.saveItem = async function() {
+window.saveItemManual = async function() {
+  const type = document.getElementById('mType').value;
   const code = document.getElementById('fCode').value.trim().toUpperCase();
   if (!code) return showToast('Item Code likhna zaroori hai!', 'error');
+
   const item = {
     code: code,
     subInv: document.getElementById('fSubInv').value.trim() || 'N/A',
@@ -22,11 +25,13 @@ window.saveItem = async function() {
     uom: document.getElementById('fUom').value.trim().toUpperCase() || 'NOS',
     qty: parseFloat(document.getElementById('fQty').value) || 0,
     cost: parseFloat(document.getElementById('fCost').value) || 0,
-    source: 'Manual'
+    parent: document.getElementById('fParent').value.trim() || 'N/A',
+    source: `Manual (${type})`
   };
+
   try {
     if (await window.saveItemToFirebase(item)) {
-      showToast('Item saved!', 'success');
+      showToast('Item saved manually!', 'success');
       closeItemModal();
       await refreshInventoryData();
     }
@@ -38,77 +43,30 @@ window.deleteItem = async function(code) {
   if (await window.deleteItemFromFirebase(code)) { showToast('Deleted!', 'success'); await refreshInventoryData(); }
 };
 
-// ==========================================
-// CLEAR SECTION (Glass Water Fill Animation)
-// ==========================================
 window.clearSection = async function(type, btn) {
   if (!confirm(`Kya aap waqai ${type.toUpperCase()} ka data clear karna chahte hain?`)) return;
-  
   const origText = btn ? btn.textContent : 'Clear';
-  
-  if (btn) {
-    btn.disabled = true;
-    btn.classList.add('clearing');
-    btn.textContent = '0% Clearing...';
-  }
-
+  if (btn) { btn.disabled = true; btn.textContent = '0%...'; }
   try {
     const allData = await window.loadInventoryFromFirebase();
-    let itemsToDelete = [];
-    
-    for (const item of allData) {
-      let shouldDelete = false;
-      if (type === 'inventory') {
-         if (!item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving'))) shouldDelete = true;
-      } 
-      else if (type === 'slow_moving') {
-         if (item.source && item.source.includes('slow_moving')) shouldDelete = true;
-      }
-      else if (type === 'bom') {
-         if (item.source && (item.source.includes('bom') || item.source.includes('assembly'))) shouldDelete = true;
-      }
-      else {
-         if (item.source && item.source.includes(type)) shouldDelete = true;
-      }
-      
-      if (shouldDelete) itemsToDelete.push(item);
-    }
-
+    let itemsToDelete = allData.filter(item => {
+      if (type === 'inventory') return !item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving') && !item.source.includes('issue') && !item.source.includes('ir') && !item.source.includes('failure'));
+      if (type === 'slow_moving') return item.source && item.source.includes('slow_moving');
+      if (type === 'bom') return item.source && (item.source.includes('bom') || item.source.includes('assembly'));
+      return item.source && item.source.includes(type);
+    });
     const total = itemsToDelete.length;
-    if (total === 0) {
-      showToast('No data found to clear.', 'default');
-      if (btn) { btn.textContent = origText; btn.disabled = false; btn.classList.remove('clearing'); }
-      return;
-    }
-
+    if (total === 0) { showToast('No data found.', 'default'); if (btn) { btn.textContent = origText; btn.disabled = false; } return; }
     let count = 0;
     for (const item of itemsToDelete) {
       await window.deleteItemFromFirebase(item.id || item.code);
       count++;
-      
-      const percent = Math.round((count / total) * 100);
-      
-      if (btn) {
-        btn.textContent = `${percent}%`;
-        // Update water fill level
-        btn.style.setProperty('--fill-level', `${percent}%`);
-        btn.style.backgroundImage = `linear-gradient(to top, rgba(0, 242, 254, 0.8) ${percent}%, transparent ${percent}%)`;
-      }
+      if (btn) btn.textContent = `${Math.round((count/total)*100)}%...`;
     }
-    
-    showToast(`${total} items cleared successfully!`, 'success');
+    showToast(`${total} items cleared!`, 'success');
     await refreshInventoryData();
-
-  } catch (err) {
-    showToast('Clear failed: ' + err.message, 'error');
-  } finally {
-    if (btn) {
-      btn.textContent = origText;
-      btn.disabled = false;
-      btn.classList.remove('clearing');
-      btn.style.backgroundImage = ''; 
-    }
-  }
+  } catch (err) { showToast('Clear failed: ' + err.message, 'error'); }
+  finally { if (btn) { btn.textContent = origText; btn.disabled = false; } }
 };
 
 window.refreshInventoryData = async function() {
@@ -123,20 +81,21 @@ window.refreshInventoryData = async function() {
   if (window.renderBOM) renderBOM();
 };
 
+// Render with Filters
 window.renderInventory = function() {
-  const tbody = document.getElementById('inventoryTable');
-  if (!tbody) return;
+  const tbody = document.getElementById('inventoryTable'); if (!tbody) return;
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
-  let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly'));
+  const subFilter = document.getElementById('invFilterSubInv')?.value || 'all';
   
+  let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly'));
   const merged = {};
-  data.forEach(i => { 
-    const k = i.code + '_' + i.subInv; 
-    if (merged[k]) merged[k].qty += (Number(i.qty)||0); 
-    else merged[k] = { ...i, qty: Number(i.qty)||0 }; 
-  });
+  data.forEach(i => { const k = i.code + '_' + i.subInv; if (merged[k]) merged[k].qty += (Number(i.qty)||0); else merged[k] = { ...i, qty: Number(i.qty)||0 }; });
 
-  let final = Object.values(merged).filter(i => !query || i.code.toLowerCase().includes(query));
+  let final = Object.values(merged).filter(i => {
+    const matchSearch = !query || i.code.toLowerCase().includes(query);
+    const matchFilter = subFilter === 'all' || i.subInv === subFilter;
+    return matchSearch && matchFilter;
+  });
   final.sort((a, b) => a.code.localeCompare(b.code));
 
   if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
@@ -150,32 +109,36 @@ window.renderInventory = function() {
 };
 
 window.renderSlowMoving = function() {
-  const tbody = document.getElementById('slowTable');
-  if (!tbody) return;
+  const tbody = document.getElementById('slowTable'); if (!tbody) return;
   const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
-  let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
-  data = data.filter(i => !query || i.code.toLowerCase().includes(query));
+  const uomFilter = document.getElementById('slowFilterUom')?.value || 'all';
   
-  if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
-  if (!data.length) return tbody.innerHTML = `<tr><td colspan="6" class="empty">No slow moving items found.</td></tr>`;
+  let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
+  data = data.filter(i => {
+    const matchSearch = !query || i.code.toLowerCase().includes(query);
+    const matchFilter = uomFilter === 'all' || i.uom === uomFilter;
+    return matchSearch && matchFilter;
+  });
+  
+  if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="7" class="empty">Loading...</td></tr>`;
+  if (!data.length) return tbody.innerHTML = `<tr><td colspan="7" class="empty">No slow moving items found.</td></tr>`;
 
   tbody.innerHTML = data.map(i => {
     const val = (Number(i.qty)||0) * (Number(i.cost)||0);
     return `<tr><td class="code">${i.code}</td><td>${i.desc}</td><td>${i.uom}</td>
     <td style="font-weight:bold;">${formatNumber(i.qty)}</td>
     <td>Rs. ${formatNumber(i.cost)}</td>
-    <td style="font-weight:bold; color:#19835a;">Rs. ${formatNumber(val)}</td></tr>`;
+    <td style="font-weight:bold; color:#19835a;">Rs. ${formatNumber(val)}</td>
+    <td><button class="glass-clear-btn" style="padding:5px 10px; font-size:10px;" onclick="deleteItem('${i.code}')">Del</button></td></tr>`;
   }).join('');
 };
 
 window.renderAlerts = function() {
-  const tbody = document.getElementById('alertTable');
-  if (!tbody) return;
+  const tbody = document.getElementById('alertTable'); if (!tbody) return;
   const query = document.getElementById('alertSearch')?.value.toLowerCase() || '';
-  
   const merged = {};
   window.inventoryData.forEach(i => { if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; });
-
+  
   let alerts = [];
   Object.values(merged).forEach(i => {
     const q = Number(i.qty), u = (i.uom||'NOS').toUpperCase();
@@ -185,7 +148,6 @@ window.renderAlerts = function() {
     else if ((u === 'KGS' || u === 'KG') && q < 100) { alert = true; st = 'LOW (< 100)'; }
     if (alert) alerts.push({ ...i, st });
   });
-
   if (query) alerts = alerts.filter(i => i.code.toLowerCase().includes(query));
   alerts.sort((a, b) => a.qty - b.qty);
   if (!alerts.length) return tbody.innerHTML = `<tr><td colspan="5" class="empty">All stock healthy!</td></tr>`;
