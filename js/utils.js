@@ -1,5 +1,5 @@
 // ==========================================
-// UTILS.JS — Helpers, Toast & Daily Quotes
+// UTILS.JS — Helpers, Toast & PDF Download
 // ==========================================
 
 // 1. Toast Notification
@@ -42,7 +42,57 @@ window.formatNumber = function(num) {
   });
 };
 
-// 4. Daily Motivation Quotes
+// 4. NEW: Cost Formatter (K, M, B) for Dashboard
+window.formatCost = function(num) {
+  if (!num || isNaN(num)) return 'Rs. 0';
+  const n = Number(num);
+  if (n >= 1e9) return 'Rs. ' + (n / 1e9).toFixed(2) + ' B';  // Billion
+  if (n >= 1e6) return 'Rs. ' + (n / 1e6).toFixed(2) + ' M';  // Million
+  if (n >= 1e3) return 'Rs. ' + (n / 1e3).toFixed(1) + ' K';  // Thousand
+  return 'Rs. ' + n.toFixed(0);
+};
+
+// 5. NEW: Download Low Stock as PDF
+window.downloadLowStockPDF = function() {
+  if (!window.inventoryData || window.inventoryData.length === 0) {
+    return showToast('No data to download', 'error');
+  }
+
+  let merged = {};
+  window.inventoryData.forEach(i => {
+    if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); 
+    else merged[i.code] = { ...i, qty: Number(i.qty)||0 };
+  });
+
+  let alerts = [];
+  Object.values(merged).forEach(i => {
+    const q = Number(i.qty), u = (i.uom||'NOS').toUpperCase();
+    if (q <= 0 || (u === 'NOS' && q < 500) || (u === 'KGS' && q < 100)) {
+      alerts.push(i);
+    }
+  });
+
+  if (alerts.length === 0) return showToast('No low stock items found', 'default');
+
+  // Create PDF via Print Window
+  const printWindow = window.open('', '', 'height=600,width=800');
+  printWindow.document.write('<html><head><title>Low Stock Report</title>');
+  printWindow.document.write('<style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px;} th{background:#f4f4f4;}</style>');
+  printWindow.document.write('</head><body>');
+  printWindow.document.write('<h2>Low Stock Items Report</h2>');
+  printWindow.document.write('<p>Date: ' + new Date().toLocaleDateString() + '</p>');
+  printWindow.document.write('<table><thead><tr><th>Item Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody>');
+  
+  alerts.forEach(i => {
+    printWindow.document.write(`<tr><td>${i.code}</td><td>${i.desc || '-'}</td><td>${i.uom || 'NOS'}</td><td style="color:red;font-weight:bold;">${i.qty}</td></tr>`);
+  });
+  
+  printWindow.document.write('</tbody></table></body></html>');
+  printWindow.document.close();
+  printWindow.print();
+};
+
+// 6. Daily Motivation Quotes & Initialization
 const dailyQuotes = [
   "The secret of getting ahead is getting started. – Mark Twain",
   "Success is not final, failure is not fatal: it is the courage to continue that counts. – Winston Churchill",
@@ -56,7 +106,6 @@ const dailyQuotes = [
   "Your limitation—it's only your imagination."
 ];
 
-// 5. Initialize on Page Load
 document.addEventListener('DOMContentLoaded', () => {
   // Topbar Date
   const datePill = document.getElementById('todayDate');
@@ -76,4 +125,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-console.log("✅ Utils.js loaded (Quotes + Helpers)");
+console.log("✅ Utils.js loaded (Cost Format + PDF Download)");
