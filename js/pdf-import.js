@@ -144,19 +144,18 @@ function parseNormalLine(words, item) {
   }
 }
 
-// Cost Fix: UOM ke baad pehla number Qty, dusra number Rate/Cost
+// Slow Moving Cost Fix
 function parseSlowLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
-  for (let i = 0; i < words.length; i++) {
-    if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
-  }
+  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
   if (uomI !== -1) {
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
       if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
+    // Slow Moving: Pehla number Qty, Dusra number Cost (Rate)
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
   } else {
