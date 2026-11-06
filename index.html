@@ -38,7 +38,7 @@
     </nav>
     
     <div class="top-actions">
-      <div class="date-pill glass-effect" id="todayDate">—</div>
+      <div class="date-pill glass-effect glow-text" id="todayDate">—</div>
       <div class="avatar glass-effect">S</div>
     </div>
   </header>
@@ -49,14 +49,40 @@
       <h1 id="headerTitle">Dashboard</h1>
     </div>
 
-    <!-- DASHBOARD -->
+    <!-- DASHBOARD (Donut Circles) -->
     <section id="page-dashboard" class="section-page active">
-      <div class="quote-bar glass-effect" id="quoteBar">💡 Loading daily motivation...</div>
-      <div class="stats">
-        <div class="stat glass-effect"><div class="stat-icon">📦</div><div class="stat-label">Total Items</div><div class="stat-value" id="statItems">0</div></div>
-        <div class="stat glass-effect danger-pulse"><div class="stat-icon">⚠️</div><div class="stat-label">Low Stock Items</div><div class="stat-value" id="statAlerts" style="color:#ff5e7e">0</div></div>
-        <div class="stat glass-effect"><div class="stat-icon">💰</div><div class="stat-label">Inventory Cost</div><div class="stat-value" id="statValue" style="font-size:20px">Rs. 0</div></div>
-        <div class="stat glass-effect"><div class="stat-icon">📊</div><div class="stat-label">Total Quantity</div><div class="stat-value" id="statQty">0</div></div>
+      <div class="quote-bar glass-effect glow-text" id="quoteBar">💡 Loading daily motivation...</div>
+      
+      <div class="dashboard-circles">
+        <!-- Total Items Circle -->
+        <div class="circle-card glass-effect">
+          <div class="circle-progress" style="--percent: 100;">
+             <div class="circle-inner">
+                <span id="statItems">0</span>
+             </div>
+          </div>
+          <div class="circle-label">Total Items</div>
+        </div>
+
+        <!-- Low Stock Circle -->
+        <div class="circle-card glass-effect danger-pulse">
+          <div class="circle-progress danger-circle" style="--percent: 75;">
+             <div class="circle-inner">
+                <span id="statAlerts" style="color:#ff5e7e">0</span>
+             </div>
+          </div>
+          <div class="circle-label" style="color:#ff5e7e">Low Stock</div>
+        </div>
+
+        <!-- Cost Circle -->
+        <div class="circle-card glass-effect">
+          <div class="circle-progress" style="--percent: 100;">
+             <div class="circle-inner">
+                <span id="statValue" style="font-size:18px">Rs. 0</span>
+             </div>
+          </div>
+          <div class="circle-label">Inventory Cost</div>
+        </div>
       </div>
     </section>
 
@@ -64,7 +90,7 @@
     <section id="page-inventory" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>Custom Inventory</h3></div><div><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear All</button><button class="glass-blue-btn" onclick="openManualAdd('inventory')">＋ Add Manual</button></div></div>
-        <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
+        <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
       </div>
     </section>
 
@@ -119,7 +145,13 @@
     <!-- LOW STOCK -->
     <section id="page-alerts" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>⚠️ Low Stock Alerts</h3></div><div><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear Inventory</button></div></div>
+        <div class="panel-head">
+          <div><h3>⚠️ Low Stock Alerts</h3></div>
+          <div>
+            <button class="glass-blue-btn" onclick="downloadLowStockPDF()">⬇ Download PDF</button>
+            <button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear Inventory</button>
+          </div>
+        </div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div>
       </div>
     </section>
@@ -208,4 +240,4 @@
 </script>
 
 </body>
-  </html>
+                                                                                                      </html>
