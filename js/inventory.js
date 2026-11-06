@@ -1,16 +1,23 @@
 // ==========================================
-// INVENTORY.JS — Cost Sync & Search
+// INVENTORY.JS — Flexible Cost Sync
 // ==========================================
 
 window.inventoryData = [];
 window.isDataLoaded = false;
 
-// Helper: Agar item ki apni cost 0 hai, toh Slow Moving se uthao
+// Helper: Agar item ki apni cost 0 hai, toh Slow Moving se uthao (Flexible Match)
 function getSmartCost(item) {
   let cost = Number(item.cost) || 0;
   if (cost === 0 && window.inventoryData) {
-    // Search in Slow Moving for exact code match
-    const slowItem = window.inventoryData.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
+    // 1. Try exact match
+    let slowItem = window.inventoryData.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
+    
+    // 2. If not found, try matching first 10 characters (e.g., CM0392-000)
+    if (!slowItem && item.code.length > 10) {
+      const shortCode = item.code.substring(0, 10);
+      slowItem = window.inventoryData.find(i => i.code.startsWith(shortCode) && i.source && i.source.includes('slow_moving'));
+    }
+
     if (slowItem && Number(slowItem.cost) > 0) {
       cost = Number(slowItem.cost);
     }
@@ -94,8 +101,6 @@ window.refreshInventoryData = async function() {
   if (window.renderAlerts) renderAlerts();
   if (window.updateDashboardStats) updateDashboardStats();
   if (window.renderBOM) renderBOM();
-  if (window.renderIssue) renderIssue();
-  if (window.renderIR) renderIR();
 };
 
 window.renderInventory = function() {
