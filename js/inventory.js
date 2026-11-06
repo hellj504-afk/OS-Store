@@ -1,5 +1,5 @@
 // ==========================================
-// INVENTORY.JS — With Store Logic
+// INVENTORY.JS — Smart Cost (Syncs with Slow Moving)
 // ==========================================
 
 window.inventoryData = [];
@@ -78,16 +78,27 @@ window.refreshInventoryData = async function() {
   if (window.renderStore) renderStore();
   if (window.renderSlowMoving) renderSlowMoving();
   if (window.renderAlerts) renderAlerts();
-  if (window.renderDashboardTable) renderDashboardTable();
   if (window.updateDashboardStats) updateDashboardStats();
   if (window.renderBOM) renderBOM();
 };
+
+// Function to get cost from Slow Moving if item's own cost is 0
+function getSmartCost(item) {
+  let cost = Number(item.cost) || 0;
+  if (cost === 0 && window.inventoryData) {
+    // Search for this item code in Slow Moving data
+    const slowItem = window.inventoryData.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
+    if (slowItem && Number(slowItem.cost) > 0) {
+      cost = Number(slowItem.cost);
+    }
+  }
+  return cost;
+}
 
 window.renderInventory = function() {
   const tbody = document.getElementById('inventoryTable'); if (!tbody) return;
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
   
-  // Filter normal inventory (exclude store, bom, slow)
   let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly') && !i.source?.includes('store'));
   const merged = {};
   data.forEach(i => { const k = i.code + '_' + i.subInv; if (merged[k]) merged[k].qty += (Number(i.qty)||0); else merged[k] = { ...i, qty: Number(i.qty)||0 }; });
@@ -98,22 +109,22 @@ window.renderInventory = function() {
   if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="7" class="empty">Loading...</td></tr>`;
   if (!final.length) return tbody.innerHTML = `<tr><td colspan="7" class="empty">No items found.</td></tr>`;
 
-  tbody.innerHTML = final.map(i => `
+  tbody.innerHTML = final.map(i => {
+    const smartCost = getSmartCost(i);
+    return `
     <tr>
       <td class="code">${i.code}</td><td><span class="badge no">${i.subInv}</span></td><td>${i.desc}</td><td>${i.uom}</td>
       <td style="font-weight:bold; color:var(--blue);">${formatNumber(i.qty)}</td>
-      <td>Rs. ${formatNumber(i.cost)}</td>
+      <td style="color: ${smartCost > 0 ? '#00f2fe' : 'inherit'}; font-weight: ${smartCost > 0 ? 'bold' : 'normal'};">Rs. ${formatNumber(smartCost)}</td>
       <td><button class="glass-clear-btn" style="padding:5px 10px; font-size:10px;" onclick="deleteItem('${i.code}')">Del</button></td>
     </tr>
-  `).join('');
+  `}).join('');
 };
 
-// NEW STORE RENDER FUNCTION
 window.renderStore = function() {
   const tbody = document.getElementById('storeTable'); if (!tbody) return;
   const query = document.getElementById('storeSearch')?.value.toLowerCase() || '';
   
-  // Filter Store data only
   let data = window.inventoryData.filter(i => i.source && i.source.includes('store'));
   const merged = {};
   data.forEach(i => { if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; });
@@ -124,14 +135,16 @@ window.renderStore = function() {
   if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
   if (!final.length) return tbody.innerHTML = `<tr><td colspan="6" class="empty">No store items found.</td></tr>`;
 
-  tbody.innerHTML = final.map(i => `
+  tbody.innerHTML = final.map(i => {
+    const smartCost = getSmartCost(i);
+    return `
     <tr>
       <td class="code">${i.code}</td><td>${i.desc}</td><td>${i.uom}</td>
       <td style="font-weight:bold; color:var(--blue);">${formatNumber(i.qty)}</td>
-      <td>Rs. ${formatNumber(i.cost)}</td>
+      <td style="color: ${smartCost > 0 ? '#00f2fe' : 'inherit'}; font-weight: ${smartCost > 0 ? 'bold' : 'normal'};">Rs. ${formatNumber(smartCost)}</td>
       <td><button class="glass-clear-btn" style="padding:5px 10px; font-size:10px;" onclick="deleteItem('${i.code}')">Del</button></td>
     </tr>
-  `).join('');
+  `}).join('');
 };
 
 window.renderSlowMoving = function() {
@@ -153,4 +166,28 @@ window.renderSlowMoving = function() {
   }).join('');
 };
 
-window.renderAlerts = function() { /* Same as before */ };
+window.renderAlerts = function() {
+  const tbody = document.getElementById('alertTable'); if (!tbody) return;
+  const merged = {};
+  window.inventoryData.forEach(i => { if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; });
+  
+  let alerts = [];
+  Object.values(merged).forEach(i => {
+    const q = Number(i.qty), u = (i.uom||'NOS').toUpperCase();
+    let st = '', alert = false;
+    if (q <= 0) { alert = true; st = 'OUT OF STOCK'; }
+    else if (u === 'NOS' && q < 500) { alert = true; st = 'LOW (< 500)'; }
+    else if ((u === 'KGS' || u === 'KG') && q < 100) { alert = true; st = 'LOW (< 100)'; }
+    if (alert) alerts.push({ ...i, st });
+  });
+  
+  alerts.sort((a, b) => a.qty - b.qty);
+  if (!alerts.length) return tbody.innerHTML = `<tr><td colspan="5" class="empty">All stock healthy!</td></tr>`;
+
+  tbody.innerHTML = alerts.map(i => `
+    <tr style="${i.qty <= 0 ? 'background: rgba(201,58,77,0.15)' : ''}">
+      <td class="code" style="color:#c93a4d;">${i.code}</td><td>${i.desc}</td><td>${i.uom}</td>
+      <td style="font-weight:bold; color:#c93a4d;">${formatNumber(i.qty)}</td>
+      <td><span class="badge danger" style="padding:5px 10px;">${i.st}</span></td>
+    </tr>`).join('');
+};
