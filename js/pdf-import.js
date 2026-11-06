@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Exact Cost Fix for Slow Moving
+// PDF-IMPORT.JS — Clean & Working
 // ==========================================
 
 window.importedRows = [];
@@ -72,7 +72,6 @@ async function handlePDF(file) {
              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
              allRows.push(currentItem);
              
-             // Slow Moving specific parser
              if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
              else parseNormalLine(line.words, currentItem);
            } else if (currentItem) {
@@ -99,7 +98,7 @@ function finalizeData(allRows, importType) {
     const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
     if (map[key]) { 
       map[key].qty += r.qty; 
-      if(r.cost > 0) map[key].cost = r.cost; // Latest cost update karein
+      if(r.cost > 0) map[key].cost = r.cost;
     }
     else map[key] = r;
   });
@@ -155,7 +154,7 @@ function parseNormalLine(words, item) {
   }
 }
 
-// ✅ SLOW MOVING COST FIX (Yeh asal mein cost uthata hai)
+// ✅ SLOW MOVING COST FIX
 function parseSlowLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numR = /^[\d,]+\.?\d*$/;
@@ -175,7 +174,6 @@ function parseSlowLine(words, item) {
       }
     }
     
-    // Asal format: Qty (pehla), Rate/Cost (dusra)
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
     
@@ -201,7 +199,6 @@ window.confirmImport = async function(btnElement) {
   if (progressText) progressText.textContent = '0%';
 
   try {
-    // Check if we need to clear old data
     if (document.getElementById('chkDeleteOld')?.checked) {
       if (progressText) progressText.textContent = 'Clearing old data...';
       const allData = await window.loadInventoryFromFirebase();
