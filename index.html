@@ -36,48 +36,108 @@
     <div class="nav-label">WORKSPACE</div>
     
     <nav class="nav" id="nav">
+      <!-- Dashboard Icon (Aapka Store Icon) -->
       <button class="active" data-page="dashboard">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M160 160 L480 160 L480 210 L160 210 Z" fill="#4FD1C5"/>
+          <path d="M140 360 L200 360 L200 480 L140 480 Z" fill="#4FD1C5"/>
+          <path d="M320 350 C320 350 310 340 290 340 C270 340 260 350 260 370 L260 390 L280 390 L280 370 C280 360 290 350 300 350 C310 350 310 360 310 370 L310 390 L330 390 L330 370 C330 360 340 350 350 350 C360 350 370 360 370 370 L370 390 L390 390 L390 370 C390 350 380 340 360 340 C340 340 330 350 320 350 Z" stroke="#4FD1C5" stroke-width="20" stroke-linejoin="round"/>
+          <path d="M100 240 L320 150 L540 240" stroke="black" stroke-width="25" stroke-linejoin="round"/>
+          <path d="M130 240 V480 H510 V240" stroke="black" stroke-width="25" stroke-linejoin="round"/>
+          <rect x="100" y="240" width="440" height="60" rx="20" stroke="black" stroke-width="25" fill="white"/>
+          <path d="M150 300 C150 320 170 320 170 300" stroke="black" stroke-width="20" stroke-linecap="round"/>
+          <path d="M220 300 C220 320 240 320 240 300" stroke="black" stroke-width="20" stroke-linecap="round"/>
+          <path d="M290 300 C290 320 310 320 310 300" stroke="black" stroke-width="20" stroke-linecap="round"/>
+          <path d="M360 300 C360 320 380 320 380 300" stroke="black" stroke-width="20" stroke-linecap="round"/>
+          <path d="M430 300 C430 320 450 320 450 300" stroke="black" stroke-width="20" stroke-linecap="round"/>
+          <path d="M500 300 C500 320 520 320 520 300" stroke="black" stroke-width="20" stroke-linecap="round"/>
+          <rect x="90" y="480" width="460" height="40" rx="10" stroke="black" stroke-width="25" fill="white"/>
+          <rect x="150" y="300" width="100" height="180" stroke="black" stroke-width="20" fill="white"/>
+          <rect x="280" y="300" width="200" height="180" stroke="black" stroke-width="20" fill="white"/>
+        </svg>
         Dashboard
       </button>
       
+      <!-- Custom Inventory (Box) -->
       <button data-page="inventory">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M320 100 L520 220 V420 L320 540 L120 420 V220 L320 100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
+          <path d="M120 220 L320 340 L520 220" stroke="black" stroke-width="25" stroke-linejoin="round"/>
+          <path d="M320 540 V340" stroke="black" stroke-width="25" stroke-linejoin="round"/>
+          <path d="M220 160 L420 280" stroke="#4FD1C5" stroke-width="20" stroke-linecap="round"/>
+        </svg>
         Custom Inventory
       </button>
       
+      <!-- Slow Moving (Clock) -->
       <button data-page="slow_moving">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="320" cy="320" r="200" stroke="black" stroke-width="25" fill="white"/>
+          <circle cx="320" cy="320" r="40" fill="#4FD1C5"/>
+          <path d="M320 200 V320 L400 360" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         Slow Moving
       </button>
       
+      <!-- BOM (Layers) -->
       <button data-page="bom">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M2 15h10"></path><path d="M2 18h10"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M320 120 L540 240 L320 360 L100 240 L320 120Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
+          <path d="M100 360 L320 480 L540 360" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
+          <path d="M100 240 V440" stroke="black" stroke-width="25"/>
+          <path d="M540 240 V440" stroke="black" stroke-width="25"/>
+          <path d="M320 360 V480" stroke="#4FD1C5" stroke-width="25"/>
+        </svg>
         BOM Management
       </button>
       
+      <!-- Issue Voucher (Upload) -->
       <button data-page="issue">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M160 400 V500 H480 V400" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round" fill="white"/>
+          <path d="M320 400 V120" stroke="black" stroke-width="25" stroke-linecap="round"/>
+          <path d="M200 240 L320 120 L440 240" stroke="#4FD1C5" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         Issue Voucher
       </button>
       
+      <!-- IR (Download) -->
       <button data-page="ir">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M160 400 V500 H480 V400" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round" fill="white"/>
+          <path d="M320 120 V400" stroke="black" stroke-width="25" stroke-linecap="round"/>
+          <path d="M200 280 L320 400 L440 280" stroke="#4FD1C5" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         IR / Move Order
       </button>
       
+      <!-- Failure (Warning) -->
       <button data-page="failure">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M320 100 L560 520 H80 L320 100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
+          <path d="M320 240 V380" stroke="#4FD1C5" stroke-width="25" stroke-linecap="round"/>
+          <circle cx="320" cy="450" r="15" fill="#4FD1C5"/>
+        </svg>
         Failure & Scrap
       </button>
       
+      <!-- Alerts (Bell) -->
       <button data-page="alerts">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M320 120 C220 120 160 200 160 300 V400 L120 480 H520 L480 400 V300 C480 200 420 120 320 120Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
+          <path d="M260 520 C260 560 380 560 380 520" stroke="black" stroke-width="25" stroke-linecap="round"/>
+          <circle cx="320" cy="220" r="20" fill="#4FD1C5"/>
+        </svg>
         Low Stock Alerts
       </button>
       
+      <!-- PDF Import (File) -->
       <button data-page="pdf">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 12 15 15"></polyline></svg>
+        <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M180 100 H360 L480 220 V520 H180 V100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
+          <path d="M360 100 V220 H480" stroke="black" stroke-width="25" stroke-linejoin="round"/>
+          <path d="M260 360 V440 M320 360 V440 M260 400 H320" stroke="#4FD1C5" stroke-width="20" stroke-linecap="round"/>
+        </svg>
         PDF / Excel Import
       </button>
     </nav>
@@ -106,30 +166,22 @@
       
       <div class="stats">
         <div class="stat glass-effect">
-          <div class="stat-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4facfe" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-          </div>
+          <div class="stat-icon">📦</div>
           <div class="stat-label">Total Items</div>
           <div class="stat-value" id="statItems">0</div>
         </div>
         <div class="stat glass-effect danger-pulse">
-          <div class="stat-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff5e7e" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-          </div>
+          <div class="stat-icon">⚠️</div>
           <div class="stat-label">Low Stock Items</div>
           <div class="stat-value" id="statAlerts" style="color:#ff5e7e">0</div>
         </div>
         <div class="stat glass-effect">
-          <div class="stat-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f093fb" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-          </div>
+          <div class="stat-icon">💰</div>
           <div class="stat-label">Inventory Cost</div>
           <div class="stat-value" id="statValue" style="font-size:20px">Rs. 0</div>
         </div>
         <div class="stat glass-effect">
-          <div class="stat-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-          </div>
+          <div class="stat-icon">📊</div>
           <div class="stat-label">Total Quantity</div>
           <div class="stat-value" id="statQty">0</div>
         </div>
@@ -330,21 +382,4 @@
     </div>
     <div class="modal-actions">
       <button class="secondary water-btn" onclick="closeItemModal()">Cancel</button>
-      <button class="primary water-btn" onclick="saveItem()">Save Item</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<!-- Scripts -->
-<script type="module" src="js/firebase-config.js"></script>
-<script type="module" src="js/storage.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/inventory.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/pdf-import.js"></script>
-<script src="js/bom.js"></script>
-<script src="js/app.js"></script>
-</body>
-        </html>
+      <button class="primary water-btn" onclick="saveItem(
