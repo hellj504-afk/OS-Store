@@ -6,7 +6,7 @@
 <title>StoreOS — Dashboard</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for Graph -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
 
 <link rel="stylesheet" href="css/background.css">
 <link rel="stylesheet" href="css/style.css">
@@ -45,19 +45,18 @@
   </header>
 
   <main>
-    <!-- DASHBOARD (New Design) -->
+    <!-- DASHBOARD (Wide Blocks + Bar Graph) -->
     <section id="page-dashboard" class="section-page active">
       
-      <!-- Welcome Header -->
       <div class="welcome-header">
         <h1>Welcome back, Admin</h1>
       </div>
 
-      <div class="dashboard-grid">
+      <div class="dashboard-wide-grid">
         
-        <!-- Top Left: Total Revenue -->
-        <div class="card glass-effect total-revenue-card">
-          <div class="card-title">Total Revenue</div>
+        <!-- Top Block: Total Revenue (Full Width) -->
+        <div class="card glass-effect">
+          <div class="card-title">Total Revenue / Cost</div>
           <div class="revenue-value" id="statValue">Rs. 0</div>
           <div class="revenue-sub">
             <span class="badge-green">+12.5%</span> vs last month
@@ -69,11 +68,18 @@
           </div>
         </div>
 
-        <!-- Top Right: Comparison Bars -->
-        <div class="card glass-effect comparison-card">
-          <div class="comp-header">
-            <div class="comp-val" id="statItems">0</div>
-            <div class="comp-label">Total Items</div>
+        <!-- Middle Block: Comparison Bars (Full Width) -->
+        <div class="card glass-effect">
+          <div class="card-title">Inventory Status</div>
+          <div class="comp-header" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px;">
+            <div>
+              <div class="comp-val" id="statItems">0</div>
+              <div class="comp-label">Total Items</div>
+            </div>
+            <div>
+              <div class="comp-val" id="statAlerts" style="color: #ff5e7e;">0</div>
+              <div class="comp-label">Low Stock Items</div>
+            </div>
           </div>
           <div class="comp-bars">
             <div class="bar-group">
@@ -91,74 +97,24 @@
           </div>
         </div>
 
-        <!-- Bottom Left: Analytics Chart -->
-        <div class="card glass-effect analytics-card">
+        <!-- Bottom Block: Recent Transactions as BAR GRAPH (Full Width) -->
+        <div class="card glass-effect">
           <div class="panel-head">
-            <div class="card-title">Analytics</div>
+            <div class="card-title">Recent Transactions (Bar Graph)</div>
             <div class="legend">
-              <span class="dot income"></span> Income
-              <span class="dot expense"></span> Expense
+              <span class="dot income"></span> Issued
+              <span class="dot expense"></span> Received
             </div>
           </div>
-          <div class="chart-container">
-            <canvas id="myChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Bottom Middle: Activity Grid -->
-        <div class="card glass-effect activity-card">
-          <div class="card-title">Activity by time</div>
-          <div class="activity-grid">
-            <!-- Mock Grid squares -->
-            <div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square active"></div><div class="grid-square"></div>
-            <div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square"></div>
-            <div class="grid-square"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div>
-            <div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square"></div>
-            <div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div>
-          </div>
-          <div class="grid-footer">
-            <span>Low</span>
-            <div class="color-scale">
-              <div class="scale-box s1"></div><div class="scale-box s2"></div><div class="scale-box s3"></div><div class="scale-box s4"></div>
-            </div>
-            <span>High</span>
+          <div class="chart-container" style="height: 250px; position: relative;">
+            <canvas id="barChart"></canvas>
           </div>
         </div>
 
-        <!-- Bottom Right: Recent Transactions -->
-        <div class="card glass-effect transactions-card">
-          <div class="card-title">Recent transactions</div>
-          <div class="tx-list">
-            <div class="tx-item">
-              <div class="tx-icon">📦</div>
-              <div class="tx-details">
-                <div class="tx-name">Inventory Update</div>
-                <div class="tx-desc">PDF Import Success</div>
-              </div>
-              <div class="tx-amount">+500</div>
-            </div>
-            <div class="tx-item">
-              <div class="tx-icon">⚠️</div>
-              <div class="tx-details">
-                <div class="tx-name">Low Stock Alert</div>
-                <div class="tx-desc">FG1060-00024</div>
-              </div>
-              <div class="tx-amount danger" id="statAlerts">0</div>
-            </div>
-            <div class="tx-item">
-              <div class="tx-icon">📤</div>
-              <div class="tx-details">
-                <div class="tx-name">Issue Voucher</div>
-                <div class="tx-desc">Material Issued</div>
-              </div>
-              <div class="tx-amount">-120</div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
-    <!-- INVENTORY (Unchanged) -->
+    <!-- INVENTORY -->
     <section id="page-inventory" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>Custom Inventory</h3></div><div><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear All</button><button class="glass-blue-btn" onclick="openManualAdd('inventory')">＋ Add Manual</button></div></div>
@@ -166,7 +122,7 @@
       </div>
     </section>
 
-    <!-- SLOW MOVING (Unchanged) -->
+    <!-- SLOW MOVING -->
     <section id="page-slow_moving" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>Slow Moving</h3></div><div><button class="glass-clear-btn" onclick="clearSection('slow_moving', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('slow_moving')">＋ Add Manual</button></div></div>
@@ -174,19 +130,22 @@
       </div>
     </section>
 
-    <!-- BOM, ISSUE, IR, FAILURE, ALERTS, PDF (Unchanged, keeping it short for readability) -->
-    <!-- ... (Aap yahan baaki sections rakh sakte hain jo pehle se hain) ... -->
-    
+    <!-- BOM (Shorted for brevity) -->
     <section id="page-bom" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>BOM Management</h3></div><div><button class="glass-clear-btn" onclick="clearSection('bom', this)">Clear BOM</button><button class="glass-blue-btn" onclick="openManualAdd('bom')">＋ Add Manual</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Type</th><th>Parent</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div></div></section>
+    <!-- ISSUE -->
     <section id="page-issue" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>Issue Voucher</h3></div><div><button class="glass-clear-btn" onclick="clearSection('issue_voucher', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('issue_voucher')">＋ Add Manual</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div></div></section>
+    <!-- IR -->
     <section id="page-ir" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>IR / Move Order</h3></div><div><button class="glass-clear-btn" onclick="clearSection('ir_voucher', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('ir_voucher')">＋ Add Manual</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div></div></section>
+    <!-- FAILURE -->
     <section id="page-failure" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>Scrap / Failure</h3></div><div><button class="glass-clear-btn" onclick="clearSection('failure', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('failure')">＋ Add Manual</button></div></div><div class="form-grid" style="margin-bottom:20px; padding:15px;"><div class="field"><label>FG Code</label><input class="glass-effect" id="failCode" placeholder="Enter FG Code"></div><div class="field"><label>Failure Qty</label><input class="glass-effect" id="failQty" type="number" step="0.01" placeholder="0.00"></div><div class="field full" style="display:flex; justify-content:flex-end;"><button class="glass-blue-btn" onclick="calculateFailure(this)">🔍 Detect Material</button></div></div><div id="failureResultArea" style="display:none; margin-top:20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><h4 style="margin:0;">Required Materials</h4><h4 style="margin:0; color:#ff5e7e;">Total: <span id="failTotalCost">Rs. 0</span></h4></div><div class="table-wrap glass-effect"><table><thead><tr><th>Component</th><th>Description</th><th>Req Qty</th><th>UOM</th><th>Cost</th><th>Total</th><th>Action</th></tr></thead><tbody id="failureResultTable"></tbody></table></div></div></div></section>
+    <!-- ALERTS -->
     <section id="page-alerts" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>⚠️ Low Stock Alerts</h3></div><div><button class="glass-blue-btn" onclick="downloadLowStockPDF()">⬇ Download PDF</button><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear Inventory</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div></div></section>
+    <!-- PDF IMPORT -->
     <section id="page-pdf" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>📄 PDF Import</h3></div></div><div class="form-grid" style="margin-bottom:16px"><div class="field"><label>Import Type</label><select class="glass-effect" id="importType"><option value="inventory">Inventory</option><option value="slow_moving">Slow Moving</option><option value="pre_assembly">Pre Assembly</option><option value="final_assembly">Final Assembly</option><option value="bom">BOM Detail</option><option value="issue_voucher">Issue Voucher</option><option value="ir_voucher">IR / Move Order</option><option value="failure">Failure</option></select></div></div><div class="import-box glass-effect" onclick="document.getElementById('pdfFile').click()"><div style="font-size:36px;margin-bottom:10px">📥</div><div style="font-weight:700;font-size:14px">Click to Upload PDF</div><input type="file" id="pdfFile" accept=".pdf" style="display:none" onchange="handleFileUpload(event)"></div><div id="pdfStatus" class="pdf-status"></div><div id="importProgressBar" style="display:none; margin-top:15px; width:100%; height:10px; background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden;"><div id="importProgressFill" style="width:0%; height:100%; background:linear-gradient(90deg, #00f2fe, #4facfe, #f093fb); transition: width 0.1s;"></div></div><div id="importProgressText" style="display:none; text-align:center; font-size:12px; margin-top:5px; font-weight:bold; color:#4facfe;">0%</div><div id="previewArea" style="display:none; margin-top:20px;"><div class="preview-head"><strong>Preview: <span id="previewCount">0</span> rows</strong><button class="glass-blue-btn" onclick="confirmImport(this)">✓ Import Now</button></div><div class="table-wrap glass-effect" style="max-height:420px;overflow:auto"><table><thead><tr><th>Parent</th><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table></div></div></div></section>
   </main>
 </div>
 
-<!-- MANUAL ADD MODAL -->
+<!-- Modal (Same as before) -->
 <div class="modal" id="itemModal">
   <div class="modal-card glass-effect">
     <div class="modal-head"><h3>Add Item Manually</h3><button class="close glass-effect" onclick="closeItemModal()">×</button></div>
@@ -216,8 +175,8 @@
 <script src="js/bom.js"></script>
 <script src="js/app.js"></script>
 
-<!-- FALLBACK NAVIGATION -->
 <script>
+  // Navigation Fallback
   function switchPage(pageName) {
     document.querySelectorAll('.section-page').forEach(function(page) { page.classList.remove('active'); });
     var targetPage = document.getElementById('page-' + pageName);
@@ -226,40 +185,35 @@
       if (btn.getAttribute('data-page') === pageName) btn.classList.add('active');
       else btn.classList.remove('active');
     });
-    var titles = { dashboard: 'Dashboard', inventory: 'Inventory', slow_moving: 'Slow Moving', bom: 'BOM Management', issue: 'Issue Voucher', ir: 'IR / Move Order', failure: 'Failure & Scrap', alerts: 'Low Stock Alerts', pdf: 'PDF Import' };
-    var titleEl = document.getElementById('headerTitle');
-    // Titles removed from header in new design, but keep logic if needed
     if (pageName === 'alerts' && window.renderAlerts) window.renderAlerts();
     if (pageName === 'slow_moving' && window.renderSlowMoving) window.renderSlowMoving();
     if (pageName === 'bom' && window.renderBOM) window.renderBOM();
   }
 
-  // Chart.js Initialization (Mock Data)
+  // Chart.js Initialization for Recent Transactions (Bar Graph)
   document.addEventListener("DOMContentLoaded", function() {
-    const ctx = document.getElementById('myChart');
+    const ctx = document.getElementById('barChart');
     if(ctx) {
       new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
           datasets: [
             {
-              label: 'Income',
-              data: [12, 19, 15, 25, 22, 30, 35],
+              label: 'Issued',
+              data: [120, 190, 150, 250, 220, 300, 350],
+              backgroundColor: 'rgba(0, 242, 254, 0.6)',
               borderColor: '#00f2fe',
-              backgroundColor: 'rgba(0, 242, 254, 0.1)',
-              tension: 0.4,
-              fill: true,
-              pointRadius: 0
+              borderWidth: 1,
+              borderRadius: 5
             },
             {
-              label: 'Expense',
-              data: [8, 12, 10, 18, 15, 20, 25],
+              label: 'Received',
+              data: [80, 120, 100, 180, 150, 200, 250],
+              backgroundColor: 'rgba(166, 83, 255, 0.6)',
               borderColor: '#a653ff',
-              backgroundColor: 'transparent',
-              tension: 0.4,
-              borderDash: [5, 5],
-              pointRadius: 0
+              borderWidth: 1,
+              borderRadius: 5
             }
           ]
         },
@@ -268,8 +222,8 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { display: false },
-            y: { display: false }
+            x: { grid: { display: false }, ticks: { color: '#9aa7c7' } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9aa7c7' } }
           }
         }
       });
@@ -278,4 +232,4 @@
 </script>
 
 </body>
-        </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </html>
