@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Clean & Working
+// PDF-IMPORT.JS — Advanced Column-Based Parser
 // ==========================================
 
 window.importedRows = [];
@@ -38,32 +38,40 @@ async function handlePDF(file) {
         if (line) line.words.push(word);
         else lines.push({ y: word.y, words: [word] });
       });
-      lines.sort((a, b) => b.y - a.y);
-      lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
+      lines.sort((a, b) => b.y - a.y); // Top to bottom
+      lines.forEach(l => l.words.sort((a, b) => a.x - b.x)); // Left to right
 
       let currentItem = null, currentParent = 'N/A';
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const lineText = line.words.map(w => w.text).join(' ');
+        
+        // Skip headers and page numbers
         if (!/[A-Z]{2,4}\d{3,4}-/.test(lineText) && !lineText.includes('Description')) continue;
         if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
         
+        // Find Item Code
         const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
 
         if (importType.includes('bom') || importType.includes('assembly')) {
+          // === BOM PARSING ===
           if (codeWord) {
-             if (codeWord.text.startsWith('FG') || codeWord.text.startsWith('WIP')) currentParent = codeWord.text;
-             else {
+             // Check if it's a parent (FG or WIP)
+             if (codeWord.text.startsWith('FG') || codeWord.text.startsWith('WIP')) {
+                currentParent = codeWord.text;
+             } else {
                 let row = { subInv: 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
-                parseBomLine(line.words, row);
+                parseBOMLine(line.words, row);
                 if(row.qty > 0) allRows.push(row);
              }
           } else if (currentParent !== 'N/A' && allRows.length > 0) {
+             // Description continuation
              const last = allRows[allRows.length - 1];
-             if (last.parent === currentParent) parseBomLine(line.words, last);
+             if (last.parent === currentParent) parseBOMLine(line.words, last);
           }
         } else {
+          // === INVENTORY / SLOW MOVING PARSING ===
            if (codeWord) {
              let subInv = 'N/A';
              const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
@@ -126,20 +134,42 @@ function finalizeData(allRows, importType) {
   statusDiv.className = 'pdf-status success';
 }
 
-function parseBomLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
-  let uomI = -1;
-  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
-  if (uomI !== -1) {
-    item.desc = words.slice(0, uomI).map(w => w.text).filter(t => !numR.test(t) && t !== item.code).join(' ');
-    let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-    if (nums.length > 0) item.qty = nums[0];
+// ✅ ADVANCED BOM PARSER (Column Based)
+function parseBOMLine(words, item) {
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
+  const numR = /^[\d,]+\.?\d*$/;
+  let uomIndex = -1;
+  
+  // 1. Find UOM
+  for (let i = 0; i < words.length; i++) {
+    if (uomR.test(words[i].text)) { uomIndex = i; item.uom = words[i].text.toUpperCase(); break; }
+  }
+
+  if (uomIndex !== -1) {
+    // 2. Extract Description (Before UOM)
+    item.desc = words.slice(0, uomIndex).map(w => w.text).filter(t => !numR.test(t) && t !== item.code).join(' ');
+    
+    // 3. Find numbers after UOM
+    const nums = [];
+    for (let i = uomIndex + 1; i < words.length; i++) {
+      if (numR.test(words[i].text)) {
+        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+      }
+    }
+    
+    // BOM Columns: Net Qty, Yield, Gross Qty, Diff
+    // Net Qty is the FIRST number after UOM
+    if (nums.length > 0) {
+      item.qty = nums[0]; 
+    }
   } else {
+    // Description continuation
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
+// ✅ NORMAL INVENTORY PARSER
 function parseNormalLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -147,6 +177,7 @@ function parseNormalLine(words, item) {
   if (uomI !== -1) {
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code && !t.startsWith('P02-')).join(' ');
     let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+    // Closing Qty is the last number
     if (nums.length > 0) item.qty = nums[nums.length - 1]; 
   } else {
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.text.startsWith('P02-')).map(w => w.text).join(' ');
@@ -154,7 +185,7 @@ function parseNormalLine(words, item) {
   }
 }
 
-// ✅ SLOW MOVING COST FIX
+// ✅ ADVANCED SLOW MOVING PARSER (Cost Fix)
 function parseSlowLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
   const numR = /^[\d,]+\.?\d*$/;
@@ -165,8 +196,10 @@ function parseSlowLine(words, item) {
   }
 
   if (uomI !== -1) {
+    // 1. Description (Before UOM)
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
     
+    // 2. Numbers after UOM
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
       if (numR.test(words[i].text)) {
@@ -174,8 +207,9 @@ function parseSlowLine(words, item) {
       }
     }
     
-    if (nums.length >= 1) item.qty = nums[0]; 
-    if (nums.length >= 2) item.cost = nums[1]; 
+    // Slow Moving Columns: Stock Qty, Rate, Value, Days...
+    if (nums.length >= 1) item.qty = nums[0]; // Stock
+    if (nums.length >= 2) item.cost = nums[1]; // Rate/Cost
     
   } else {
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
