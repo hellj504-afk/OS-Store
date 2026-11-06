@@ -1,23 +1,20 @@
 // ==========================================
-// INVENTORY.JS — Flexible Cost Sync
+// INVENTORY.JS — Final with 15-Char Smart Cost
 // ==========================================
 
 window.inventoryData = [];
 window.isDataLoaded = false;
 
-// Helper: Agar item ki apni cost 0 hai, toh Slow Moving se uthao (Flexible Match)
+// 15-Char Smart Cost Logic
 function getSmartCost(item) {
   let cost = Number(item.cost) || 0;
   if (cost === 0 && window.inventoryData) {
-    // 1. Try exact match
-    let slowItem = window.inventoryData.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
-    
-    // 2. If not found, try matching first 10 characters (e.g., CM0392-000)
-    if (!slowItem && item.code.length > 10) {
-      const shortCode = item.code.substring(0, 10);
-      slowItem = window.inventoryData.find(i => i.code.startsWith(shortCode) && i.source && i.source.includes('slow_moving'));
-    }
-
+    const itemShortCode = item.code.substring(0, 15);
+    const slowItem = window.inventoryData.find(i => 
+      i.source && 
+      i.source.includes('slow_moving') && 
+      i.code.substring(0, 15) === itemShortCode
+    );
     if (slowItem && Number(slowItem.cost) > 0) {
       cost = Number(slowItem.cost);
     }
