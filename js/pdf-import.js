@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Final with Store Logic
+// PDF-IMPORT.JS — Perfect Slow Moving Parser
 // ==========================================
 
 window.importedRows = [];
@@ -132,7 +132,7 @@ function finalizeData(allRows, importType) {
   statusDiv.className = 'pdf-status success';
 }
 
-function parseBOMLine(words, item) { /* Same as before */ 
+function parseBOMLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
@@ -146,7 +146,7 @@ function parseBOMLine(words, item) { /* Same as before */
   }
 }
 
-function parseNormalLine(words, item) { /* Same as before */
+function parseNormalLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
@@ -160,26 +160,40 @@ function parseNormalLine(words, item) { /* Same as before */
   }
 }
 
-function parseSlowLine(words, item) { /* Slow Moving Rate Detection */
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
+// ✅ FIXED: Slow Moving Parser (Only extracts Rate/Cost, No WIP)
+function parseSlowLine(words, item) {
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
+  const numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
-  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
+  
+  for (let i = 0; i < words.length; i++) {
+    if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
+  }
+
   if (uomI !== -1) {
+    // 1. Description
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
+    
+    // 2. Numbers after UOM
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
-      if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+      if (numR.test(words[i].text)) {
+        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+      }
     }
+    
+    // Slow Moving: Qty is 1st, Rate/Cost is 2nd. 
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
+    
   } else {
+    // Description continuation
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
 window.confirmImport = async function(btnElement) {
-  // Same as before, saving with source `PDF (${importType})`
   if (!window.importedRows.length) return showToast('No data to import!', 'error');
   const importType = document.getElementById('importType').value;
   const progressBar = document.getElementById('importProgressBar');
@@ -199,7 +213,9 @@ window.confirmImport = async function(btnElement) {
       if (progressText) progressText.textContent = 'Clearing old data...';
       const allData = await window.loadInventoryFromFirebase();
       for (const item of allData) {
-        if (item.source && item.source.includes(importType)) await window.deleteItemFromFirebase(item.id || item.code);
+        if (item.source && item.source.includes(importType)) {
+          await window.deleteItemFromFirebase(item.id || item.code);
+        }
       }
     }
 
