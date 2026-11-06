@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — With Fixed Slow Moving Cost
+// PDF-IMPORT.JS — Excel Support & Cost Fix
 // ==========================================
 
 window.importedRows = [];
@@ -8,18 +8,28 @@ if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
+// Master Upload Function
 window.handleFileUpload = async function(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.name.toLowerCase().endsWith('.csv')) handleCSV(file);
-  else if (file.name.toLowerCase().endsWith('.pdf')) handlePDF(file);
-  else showToast('Sirf PDF ya CSV file upload karein!', 'error');
+
+  // Check File Type
+  const fileName = file.name.toLowerCase();
+  if (fileName.endsWith('.csv')) {
+    handleCSV(file);
+  } else if (fileName.endsWith('.pdf')) {
+    handlePDF(file);
+  } else {
+    showToast('Sirf PDF ya CSV file upload karein!', 'error');
+  }
 };
 
-// CSV Handler
+// ==========================================
+// 1. CSV / EXCEL HANDLER
+// ==========================================
 function handleCSV(file) {
   const statusDiv = document.getElementById('pdfStatus');
-  statusDiv.textContent = '⏳ Reading CSV...';
+  statusDiv.textContent = '⏳ Reading Excel/CSV...';
   statusDiv.className = 'pdf-status';
   document.getElementById('previewArea').style.display = 'none';
 
@@ -41,7 +51,7 @@ function handleCSV(file) {
           desc: row['Description'] || row['Desc'] || '',
           uom: row['UOM'] || row['Unit'] || 'NOS',
           qty: parseFloat(row['Qty'] || row['Quantity'] || row['Stock'] || 0),
-          cost: parseFloat(row['Rate'] || row['Cost'] || 0), // CSV mein Cost uthayega
+          cost: parseFloat(row['Rate'] || row['Cost'] || 0), // CSV se cost uthayega
           parent: 'N/A'
         };
 
@@ -57,7 +67,9 @@ function handleCSV(file) {
   });
 }
 
-// PDF Handler
+// ==========================================
+// 2. PDF HANDLER
+// ==========================================
 async function handlePDF(file) {
   const statusDiv = document.getElementById('pdfStatus');
   const importType = document.getElementById('importType').value;
@@ -115,7 +127,7 @@ async function handlePDF(file) {
              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
              allRows.push(currentItem);
              
-             // Slow Moving wali PDF ke liye alag function call karein
+             // Slow Moving ka alag parser
              if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
              else parseNormalLine(line.words, currentItem);
            } else if (currentItem) {
@@ -127,11 +139,13 @@ async function handlePDF(file) {
     }
     finalizeData(allRows, importType);
   } catch (err) {
-    statusDiv.textContent = '❌ Error: ' + err.message;
+    statusDiv.textContent = '❌ PDF Error: ' + err.message;
   }
 }
 
-// Data Merge
+// ==========================================
+// DATA MERGE
+// ==========================================
 function finalizeData(allRows, importType) {
   const map = {};
   allRows.forEach(r => {
@@ -141,8 +155,12 @@ function finalizeData(allRows, importType) {
       if (m) { r.subInv = m[1]; r.desc = m[2]; }
     }
     const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
-    if (map[key]) { map[key].qty += r.qty; if(r.cost>0) map[key].cost = r.cost; }
-    else map[key] = r;
+    if (map[key]) { 
+      map[key].qty += r.qty; 
+      if(r.cost > 0) map[key].cost = r.cost; // Cost update karein
+    } else {
+      map[key] = r;
+    }
   });
   
   window.importedRows = Object.values(map);
@@ -156,14 +174,23 @@ function finalizeData(allRows, importType) {
   document.getElementById('previewCount').textContent = window.importedRows.length;
   
   document.getElementById('previewTable').innerHTML = window.importedRows.slice(0, 200).map(r => `
-    <tr><td>${r.parent || 'N/A'}</td><td class="code">${r.code}</td><td>${r.desc}</td><td>${r.uom}</td><td>${formatNumber(r.qty)}</td><td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td></tr>
+    <tr>
+      <td>${r.parent || 'N/A'}</td>
+      <td class="code">${r.code}</td>
+      <td>${r.desc}</td>
+      <td>${r.uom}</td>
+      <td>${formatNumber(r.qty)}</td>
+      <td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td>
+    </tr>
   `).join('');
 
   statusDiv.textContent = `✓ Extracted ${window.importedRows.length} rows.`;
   statusDiv.className = 'pdf-status success';
 }
 
-// BOM Parser
+// ==========================================
+// PARSERS
+// ==========================================
 function parseBomLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -178,7 +205,6 @@ function parseBomLine(words, item) {
   }
 }
 
-// Normal Inventory Parser
 function parseNormalLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -193,7 +219,7 @@ function parseNormalLine(words, item) {
   }
 }
 
-// Slow Moving Parser (Yahan Cost uthane ka fix hai)
+// Slow Moving Parser (Cost Fix)
 function parseSlowLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -205,13 +231,12 @@ function parseSlowLine(words, item) {
   if (uomI !== -1) {
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
     
-    // Slow Moving mein UOM ke baad: Stock, Rate, Value aati hai
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
       if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
     
-    // Pehla number Stock hai, Dusra number Rate (Cost) hai
+    // Slow moving mein UOM ke baad pehle Qty (Stock) aati hai, phir Cost (Rate)
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
     
@@ -221,7 +246,9 @@ function parseSlowLine(words, item) {
   }
 }
 
-// Import to Firebase
+// ==========================================
+// IMPORT CONFIRM
+// ==========================================
 window.confirmImport = async function(btnElement) {
   if (!window.importedRows.length) return showToast('No data to import!', 'error');
   const importType = document.getElementById('importType').value;
