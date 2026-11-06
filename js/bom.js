@@ -1,5 +1,5 @@
 // ==========================================
-// BOM.JS — BOM View & Failure Calc
+// BOM.JS — Exact BOM View & Failure Detect
 // ==========================================
 
 window.renderBOM = async function() {
@@ -12,19 +12,21 @@ window.renderBOM = async function() {
 
   try {
     const allData = await window.loadInventoryFromFirebase();
-    // Sirf BOM/Assembly data filter karein
+    
+    // Sirf BOM/Assembly data
     const bomData = allData.filter(item => item.source && (item.source.includes('bom') || item.source.includes('assembly')));
 
     if (bomData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty">No BOM data found. Please upload BOM PDF/Excel.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">No BOM data found. Upload PDF in PDF Import.</td></tr>`;
       return;
     }
 
-    const query = document.getElementById('bomSearch')?.value.toLowerCase() || '';
+    const query = document.getElementById('bomSearch')?.value.toUpperCase() || '';
     const filterType = document.getElementById('bomFilterType')?.value || 'all';
 
+    // Filter based on search and type
     const filtered = bomData.filter(item => {
-      const matchSearch = !query || item.code.toLowerCase().includes(query) || (item.parent || '').toLowerCase().includes(query);
+      const matchSearch = !query || item.code.includes(query) || (item.parent && item.parent.includes(query)) || (item.desc || '').toUpperCase().includes(query);
       let matchType = true;
       if (filterType !== 'all') {
          matchType = item.source.includes(filterType);
@@ -37,6 +39,7 @@ window.renderBOM = async function() {
       return;
     }
 
+    // Render Table
     tbody.innerHTML = filtered.map(item => {
       let typeName = 'BOM';
       if (item.source.includes('pre_assembly')) typeName = 'Pre Ass';
@@ -71,6 +74,7 @@ window.calculateFailure = async function() {
 
   const allData = await window.loadInventoryFromFirebase();
   
+  // 1. FG Code ke saare materials dhoondein
   const bomItems = allData.filter(i => i.source && (i.source.includes('bom') || i.source.includes('assembly')) && i.parent === fgCode);
   
   if (bomItems.length === 0) {
@@ -79,6 +83,7 @@ window.calculateFailure = async function() {
     return;
   }
 
+  // 2. Agar same material ek se zyada baar hai, toh qty combine karein
   const mergedBom = {};
   bomItems.forEach(item => {
      if (mergedBom[item.code]) {
@@ -88,11 +93,14 @@ window.calculateFailure = async function() {
      }
   });
 
+  // 3. Har material ki cost inventory se nikaalein aur calculate karein
   let totalCost = 0;
   const finalRows = Object.values(mergedBom).map(bomItem => {
+     // Inventory se cost dhoondein
      const invItem = allData.find(i => i.code === bomItem.code && !i.source?.includes('bom') && !i.source?.includes('assembly'));
      const unitCost = invItem ? (Number(invItem.cost) || 0) : 0;
      
+     // Formula: BOM Qty * Failure Qty
      const reqQty = bomItem.qty * failQty;
      const rowCost = reqQty * unitCost;
      totalCost += rowCost;
@@ -100,8 +108,10 @@ window.calculateFailure = async function() {
      return { ...bomItem, reqQty, unitCost, rowCost };
   });
 
+  // 4. Total Cost dikhayein
   document.getElementById('failTotalCost').textContent = 'Rs. ' + formatNumber(totalCost);
 
+  // 5. Table mein rows bharein
   resultBody.innerHTML = finalRows.map((r, index) => `
     <tr>
       <td class="code">${r.code}</td>
@@ -128,13 +138,12 @@ window.reuseMaterial = async function(code, qty) {
       showToast(`${qty} qty successfully reused!`, 'success');
       await window.refreshInventoryData();
     } else {
-      showToast('Original inventory item not found.', 'error');
+      showToast('Original inventory item not found to update.', 'error');
     }
   } catch (err) {
     showToast('Reuse failed: ' + err.message, 'error');
   }
 };
 
-// Baki placeholders
 window.renderIssue = function() { document.getElementById('issueTable').innerHTML = `<tr><td colspan="3" class="empty">Issue Voucher data will show here.</td></tr>`; };
 window.renderIR = function() { document.getElementById('irTable').innerHTML = `<tr><td colspan="3" class="empty">IR / Move Order data will show here.</td></tr>`; };
