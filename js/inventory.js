@@ -84,17 +84,11 @@ window.refreshInventoryData = async function() {
 window.renderInventory = function() {
   const tbody = document.getElementById('inventoryTable'); if (!tbody) return;
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
-  const subFilter = document.getElementById('invFilterSubInv')?.value || 'all';
-  
   let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly'));
   const merged = {};
   data.forEach(i => { const k = i.code + '_' + i.subInv; if (merged[k]) merged[k].qty += (Number(i.qty)||0); else merged[k] = { ...i, qty: Number(i.qty)||0 }; });
 
-  let final = Object.values(merged).filter(i => {
-    const matchSearch = !query || i.code.toLowerCase().includes(query);
-    const matchFilter = subFilter === 'all' || i.subInv === subFilter;
-    return matchSearch && matchFilter;
-  });
+  let final = Object.values(merged).filter(i => !query || i.code.toLowerCase().includes(query));
   final.sort((a, b) => a.code.localeCompare(b.code));
 
   if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
@@ -110,14 +104,8 @@ window.renderInventory = function() {
 window.renderSlowMoving = function() {
   const tbody = document.getElementById('slowTable'); if (!tbody) return;
   const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
-  const uomFilter = document.getElementById('slowFilterUom')?.value || 'all';
-  
   let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
-  data = data.filter(i => {
-    const matchSearch = !query || i.code.toLowerCase().includes(query);
-    const matchFilter = uomFilter === 'all' || i.uom === uomFilter;
-    return matchSearch && matchFilter;
-  });
+  data = data.filter(i => !query || i.code.toLowerCase().includes(query));
   
   if (!window.isDataLoaded) return tbody.innerHTML = `<tr><td colspan="7" class="empty">Loading...</td></tr>`;
   if (!data.length) return tbody.innerHTML = `<tr><td colspan="7" class="empty">No slow moving items found.</td></tr>`;
