@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Perfect Cost Detection
+// PDF-IMPORT.JS — Fixed Cost & Parsing
 // ==========================================
 
 window.importedRows = [];
@@ -96,7 +96,10 @@ function finalizeData(allRows, importType) {
       if (m) { r.subInv = m[1]; r.desc = m[2]; }
     }
     const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
-    if (map[key]) { map[key].qty += r.qty; if(r.cost > 0) map[key].cost = r.cost; }
+    if (map[key]) { 
+      map[key].qty += r.qty; 
+      if(r.cost > 0) map[key].cost = r.cost; // Latest cost update karein
+    }
     else map[key] = r;
   });
   
@@ -109,7 +112,14 @@ function finalizeData(allRows, importType) {
   document.getElementById('previewCount').textContent = window.importedRows.length;
   
   document.getElementById('previewTable').innerHTML = window.importedRows.slice(0, 200).map(r => `
-    <tr><td>${r.parent || 'N/A'}</td><td class="code">${r.code}</td><td>${r.desc}</td><td>${r.uom}</td><td>${formatNumber(r.qty)}</td><td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td></tr>
+    <tr>
+      <td>${r.parent || 'N/A'}</td>
+      <td class="code">${r.code}</td>
+      <td>${r.desc}</td>
+      <td>${r.uom}</td>
+      <td>${formatNumber(r.qty)}</td>
+      <td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td>
+    </tr>
   `).join('');
 
   statusDiv.textContent = `✓ Extracted ${window.importedRows.length} rows.`;
@@ -137,27 +147,29 @@ function parseNormalLine(words, item) {
   if (uomI !== -1) {
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code && !t.startsWith('P02-')).join(' ');
     let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-    if (nums.length > 0) item.qty = nums[nums.length - 1]; // Closing Qty is last
+    if (nums.length > 0) item.qty = nums[nums.length - 1]; // Closing Qty
   } else {
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.text.startsWith('P02-')).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
-// SLOW MOVING PARSER (Fixed Cost)
+// ✅ EXACT COST FIX FOR SLOW MOVING
 function parseSlowLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
+  const numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   
+  // 1. Find UOM index
   for (let i = 0; i < words.length; i++) {
     if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
   }
 
   if (uomI !== -1) {
-    // 1. Extract Description
+    // 2. Extract Description
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
     
-    // 2. Extract Numbers after UOM
+    // 3. Extract Numbers after UOM
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
       if (numR.test(words[i].text)) {
@@ -165,11 +177,9 @@ function parseSlowLine(words, item) {
       }
     }
     
-    // In Slow Moving: First num is Stock, Second num is Rate. 
-    // Filter out 0s if the structure is weird
+    // 4. Assign Qty & Cost
+    // Usually Format: [Stock Qty] [Rate] [Value] [Days]...
     if (nums.length >= 2) {
-       // Agar pehla number 0 hai aur dusra nahi, toh shayad pehla "Issued" tha
-       // Hum generally assume kar rahe hain ke first is Stock, second is Rate
        item.qty = nums[0];
        item.cost = nums[1];
     } else if (nums.length === 1) {
@@ -177,6 +187,7 @@ function parseSlowLine(words, item) {
     }
     
   } else {
+    // If UOM not found on this line (description continuation)
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
@@ -191,12 +202,24 @@ window.confirmImport = async function(btnElement) {
   
   const originalText = btnElement ? btnElement.textContent : 'Import';
   if (btnElement) { btnElement.textContent = 'Importing...'; btnElement.disabled = true; }
+  
   if (progressBar) progressBar.style.display = 'block';
   if (progressText) progressText.style.display = 'block';
   if (progressFill) progressFill.style.width = '0%';
   if (progressText) progressText.textContent = '0%';
 
   try {
+    // Clear old data if checkbox is checked
+    if (document.getElementById('chkDeleteOld')?.checked) {
+      if (progressText) progressText.textContent = 'Clearing old data...';
+      const allData = await window.loadInventoryFromFirebase();
+      for (const item of allData) {
+        if (item.source && item.source.includes(importType)) {
+          await window.deleteItemFromFirebase(item.id || item.code);
+        }
+      }
+    }
+
     const toSave = window.importedRows.map(r => Object.assign({}, r, { source: `PDF (${importType})`, updatedAt: new Date().toISOString() }));
     const total = toSave.length;
     let count = 0;
