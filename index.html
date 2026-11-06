@@ -75,14 +75,16 @@
     <section id="page-inventory" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>Work in Process (Inventory)</h3></div><div><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear All</button><button class="glass-blue-btn" onclick="openManualAdd('inventory')">＋ Add Manual</button></div></div>
+        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="invSearch" placeholder="Search..." oninput="renderInventory()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- STORE -->
+    <!-- STORE (Search Added) -->
     <section id="page-store" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>Store Inventory</h3></div><div><button class="glass-clear-btn" onclick="clearSection('store', this)">Clear Store</button><button class="glass-blue-btn" onclick="openManualAdd('store')">＋ Add Manual</button></div></div>
+        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="storeSearch" placeholder="Search Store..." oninput="renderStore()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th><th>Action</th></tr></thead><tbody id="storeTable"></tbody></table></div>
       </div>
     </section>
@@ -91,38 +93,43 @@
     <section id="page-slow_moving" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>Slow Moving (Cost Source)</h3></div><div><button class="glass-clear-btn" onclick="clearSection('slow_moving', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('slow_moving')">＋ Add Manual</button></div></div>
+        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="slowSearch" placeholder="Search Slow Moving..." oninput="renderSlowMoving()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Rate</th><th>Value</th><th>Action</th></tr></thead><tbody id="slowTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- BOM -->
+    <!-- BOM (Search Added) -->
     <section id="page-bom" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>BOM Management</h3></div><div><button class="glass-clear-btn" onclick="clearSection('bom', this)">Clear BOM</button><button class="glass-blue-btn" onclick="openManualAdd('bom')">＋ Add Manual</button></div></div>
+        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="bomSearch" placeholder="Search BOM..." oninput="renderBOM()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Type</th><th>Parent</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- ISSUE -->
+    <!-- ISSUE (Search Added) -->
     <section id="page-issue" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>Issue Voucher</h3></div><div><button class="glass-clear-btn" onclick="clearSection('issue_voucher', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('issue_voucher')">＋ Add Manual</button></div></div>
+        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="issueSearch" placeholder="Search Issue..." oninput="renderIssue()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- IR -->
+    <!-- IR (Search Added) -->
     <section id="page-ir" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>IR / Move Order</h3></div><div><button class="glass-clear-btn" onclick="clearSection('ir_voucher', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('ir_voucher')">＋ Add Manual</button></div></div>
+        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="irSearch" placeholder="Search IR..." oninput="renderIR()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div>
       </div>
     </section>
 
-    <!-- LOW STOCK -->
+    <!-- ALERTS -->
     <section id="page-alerts" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>⚠️ Low Stock Alerts</h3></div><div><button class="glass-blue-btn" onclick="downloadLowStockPDF()">⬇ Download PDF</button><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear Inventory</button></div></div>
+        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="alertSearch" placeholder="Search Alerts..." oninput="renderAlerts()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div>
       </div>
     </section>
@@ -210,6 +217,8 @@
     if (pageName === 'slow_moving' && window.renderSlowMoving) window.renderSlowMoving();
     if (pageName === 'bom' && window.renderBOM) window.renderBOM();
     if (pageName === 'store' && window.renderStore) window.renderStore();
+    if (pageName === 'issue' && window.renderIssue) window.renderIssue();
+    if (pageName === 'ir' && window.renderIR) window.renderIR();
   }
 
   document.addEventListener("DOMContentLoaded", function() {
@@ -232,4 +241,4 @@
 </script>
 
 </body>
-</html>
+      </html>
