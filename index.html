@@ -5,11 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreOS — Rainbow Glass Workspace</title>
 
-<!-- PDF & Excel Parsers -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-<!-- CSS Files -->
 <link rel="stylesheet" href="css/background.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/components.css">
@@ -36,8 +34,8 @@
     <div class="nav-label">WORKSPACE</div>
     
     <nav class="nav" id="nav">
-      <!-- Dashboard -->
-      <button class="active" data-page="dashboard">
+      <!-- Dashboard (Added onclick directly) -->
+      <button class="active" data-page="dashboard" onclick="window.showPage('dashboard')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M160 160 L480 160 L480 210 L160 210 Z" fill="#4FD1C5"/>
           <path d="M140 360 L200 360 L200 480 L140 480 Z" fill="#4FD1C5"/>
@@ -58,8 +56,8 @@
         Dashboard
       </button>
       
-      <!-- Custom Inventory -->
-      <button data-page="inventory">
+      <!-- Inventory -->
+      <button data-page="inventory" onclick="window.showPage('inventory')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M320 100 L520 220 V420 L320 540 L120 420 V220 L320 100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
           <path d="M120 220 L320 340 L520 220" stroke="black" stroke-width="25" stroke-linejoin="round"/>
@@ -70,7 +68,7 @@
       </button>
       
       <!-- Slow Moving -->
-      <button data-page="slow_moving">
+      <button data-page="slow_moving" onclick="window.showPage('slow_moving')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="320" cy="320" r="200" stroke="black" stroke-width="25" fill="white"/>
           <circle cx="320" cy="320" r="40" fill="#4FD1C5"/>
@@ -80,7 +78,7 @@
       </button>
       
       <!-- BOM -->
-      <button data-page="bom">
+      <button data-page="bom" onclick="window.showPage('bom')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M320 120 L540 240 L320 360 L100 240 L320 120Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
           <path d="M100 360 L320 480 L540 360" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
@@ -91,8 +89,8 @@
         BOM Management
       </button>
       
-      <!-- Issue Voucher -->
-      <button data-page="issue">
+      <!-- Issue -->
+      <button data-page="issue" onclick="window.showPage('issue')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M160 400 V500 H480 V400" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round" fill="white"/>
           <path d="M320 400 V120" stroke="black" stroke-width="25" stroke-linecap="round"/>
@@ -102,7 +100,7 @@
       </button>
       
       <!-- IR -->
-      <button data-page="ir">
+      <button data-page="ir" onclick="window.showPage('ir')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M160 400 V500 H480 V400" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round" fill="white"/>
           <path d="M320 120 V400" stroke="black" stroke-width="25" stroke-linecap="round"/>
@@ -112,7 +110,7 @@
       </button>
       
       <!-- Failure -->
-      <button data-page="failure">
+      <button data-page="failure" onclick="window.showPage('failure')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M320 100 L560 520 H80 L320 100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
           <path d="M320 240 V380" stroke="#4FD1C5" stroke-width="25" stroke-linecap="round"/>
@@ -122,7 +120,7 @@
       </button>
       
       <!-- Alerts -->
-      <button data-page="alerts">
+      <button data-page="alerts" onclick="window.showPage('alerts')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M320 120 C220 120 160 200 160 300 V400 L120 480 H520 L480 400 V300 C480 200 420 120 320 120Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
           <path d="M260 520 C260 560 380 560 380 520" stroke="black" stroke-width="25" stroke-linecap="round"/>
@@ -132,7 +130,7 @@
       </button>
       
       <!-- PDF Import -->
-      <button data-page="pdf">
+      <button data-page="pdf" onclick="window.showPage('pdf')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M180 100 H360 L480 220 V520 H180 V100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/>
           <path d="M360 100 V220 H480" stroke="black" stroke-width="25" stroke-linejoin="round"/>
@@ -378,8 +376,4 @@
         </div>
         <div class="import-box glass-effect" onclick="document.getElementById('pdfFile').click()">
           <div style="font-size:36px;margin-bottom:10px">📥</div>
-          <div style="font-weight:700;font-size:14px">Click to Upload PDF or CSV</div>
-          <input type="file" id="pdfFile" accept=".pdf, .csv" style="display:none" onchange="handleFileUpload(event)">
-        </div>
-        <div id="pdfStatus" class="pdf-status"></div>
-        <div 
+ 
