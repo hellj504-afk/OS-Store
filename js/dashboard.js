@@ -1,5 +1,5 @@
 // ==========================================
-// DASHBOARD.JS — Smart Stats
+// DASHBOARD.JS — Flexible Cost Stats
 // ==========================================
 
 window.updateDashboardStats = function() {
@@ -9,11 +9,19 @@ window.updateDashboardStats = function() {
   const uniqueCodes = new Set(data.map(i => i.code));
   if (document.getElementById('statItems')) document.getElementById('statItems').textContent = uniqueCodes.size;
 
-  // Smart Cost Calculation Function
+  // Flexible Cost Match
   function getSmartCost(item) {
     let cost = Number(item.cost) || 0;
     if (cost === 0) {
-      const slowItem = data.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
+      // 1. Exact match
+      let slowItem = data.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
+      
+      // 2. Partial match (First 10 chars)
+      if (!slowItem && item.code.length > 10) {
+        const shortCode = item.code.substring(0, 10);
+        slowItem = data.find(i => i.code.startsWith(shortCode) && i.source && i.source.includes('slow_moving'));
+      }
+      
       if (slowItem && Number(slowItem.cost) > 0) cost = Number(slowItem.cost);
     }
     return cost;
