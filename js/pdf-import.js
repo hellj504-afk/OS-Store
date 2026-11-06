@@ -117,4 +117,97 @@ function finalizeData(allRows, importType) {
 }
 
 function parseBomLine(words, item) {
-  const uomR = /^(NOS|K
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
+  let uomI = -1;
+  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
+  if (uomI !== -1) {
+    item.desc = words.slice(0, uomI).map(w => w.text).filter(t => !numR.test(t) && t !== item.code).join(' ');
+    let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+    if (nums.length > 0) item.qty = nums[0];
+  } else {
+    let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
+    if (ex.trim()) item.desc += ' ' + ex;
+  }
+}
+
+function parseNormalLine(words, item) {
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
+  let uomI = -1;
+  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
+  if (uomI !== -1) {
+    item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code && !t.startsWith('P02-')).join(' ');
+    let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+    if (nums.length > 0) item.qty = nums[nums.length - 1];
+  } else {
+    let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.text.startsWith('P02-')).map(w => w.text).join(' ');
+    if (ex.trim()) item.desc += ' ' + ex;
+  }
+}
+
+// Cost Fix: UOM ke baad pehla number Qty, dusra number Rate/Cost
+function parseSlowLine(words, item) {
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
+  let uomI = -1;
+  for (let i = 0; i < words.length; i++) {
+    if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
+  }
+  if (uomI !== -1) {
+    item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
+    const nums = [];
+    for (let i = uomI + 1; i < words.length; i++) {
+      if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+    }
+    if (nums.length >= 1) item.qty = nums[0]; 
+    if (nums.length >= 2) item.cost = nums[1]; 
+  } else {
+    let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
+    if (ex.trim()) item.desc += ' ' + ex;
+  }
+}
+
+window.confirmImport = async function(btnElement) {
+  if (!window.importedRows.length) return showToast('No data to import!', 'error');
+  const importType = document.getElementById('importType').value;
+  const progressBar = document.getElementById('importProgressBar');
+  const progressFill = document.getElementById('importProgressFill');
+  const progressText = document.getElementById('importProgressText');
+  
+  const originalText = btnElement ? btnElement.textContent : 'Import';
+  if (btnElement) { btnElement.textContent = 'Importing...'; btnElement.disabled = true; }
+  if (progressBar) progressBar.style.display = 'block';
+  if (progressText) progressText.style.display = 'block';
+  if (progressFill) progressFill.style.width = '0%';
+  if (progressText) progressText.textContent = '0%';
+
+  try {
+    const toSave = window.importedRows.map(r => Object.assign({}, r, { source: `PDF (${importType})`, updatedAt: new Date().toISOString() }));
+    const total = toSave.length;
+    let count = 0;
+
+    for (const item of toSave) {
+      await window.saveItemToFirebase(item); 
+      count++;
+      const percent = Math.round((count / total) * 100);
+      if (progressFill) progressFill.style.width = percent + '%';
+      if (progressText) progressText.textContent = percent + '% Importing...';
+    }
+    
+    showToast(`Successfully imported ${count} items!`, 'success');
+    document.getElementById('previewArea').style.display = 'none';
+    document.getElementById('pdfStatus').textContent = `✓ Import complete: ${count} rows saved.`;
+    document.getElementById('pdfFile').value = ''; 
+    
+    if (progressText) progressText.textContent = '100% Complete!';
+    setTimeout(() => {
+       if (progressBar) progressBar.style.display = 'none';
+       if (progressText) progressText.style.display = 'none';
+    }, 1500);
+
+    await refreshInventoryData();
+
+  } catch (err) {
+    showToast('Import failed: ' + err.message, 'error');
+  } finally {
+    if (btnElement) { btnElement.textContent = originalText; btnElement.disabled = false; }
+  }
+};
