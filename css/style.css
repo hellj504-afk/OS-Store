@@ -1,5 +1,5 @@
 /* ==========================================
-   STOREOS — DASHBOARD GRID DESIGN
+   STOREOS — WIDE DASHBOARD THEME
    ========================================== */
 
 :root {
@@ -37,9 +37,8 @@ button { cursor: pointer; }
   transition: all 0.3s ease;
 }
 
-/* Main Shell */
 .shell { 
-  max-width: 1440px; 
+  max-width: 1400px; 
   margin: 0 auto; 
   padding: 20px; 
   display: flex; 
@@ -76,7 +75,7 @@ main { min-width: 0; width: 100%; }
 .avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: bold; background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
 
 /* ==========================================
-   DASHBOARD NEW DESIGN
+   DASHBOARD WIDE LAYOUT
    ========================================== */
 .welcome-header h1 {
   font-size: 28px;
@@ -84,25 +83,22 @@ main { min-width: 0; width: 100%; }
   margin-bottom: 20px;
   padding-left: 10px;
 }
-.welcome-header h1 span { font-weight: 800; }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr 1.5fr;
-  grid-template-rows: auto auto;
+.dashboard-wide-grid {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
-/* Cards Base */
 .card {
   padding: 24px;
   display: flex;
   flex-direction: column;
 }
+
 .card-title { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 15px;}
 
 /* 1. Total Revenue Card */
-.total-revenue-card { grid-column: 1 / 3; grid-row: 1 / 2; }
 .revenue-value { font-size: 42px; font-weight: 800; margin-bottom: 5px; }
 .revenue-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;}
 .badge-green { background: rgba(0, 255, 150, 0.15); color: #00ff96; padding: 2px 8px; border-radius: 6px; font-weight: bold; }
@@ -111,7 +107,6 @@ main { min-width: 0; width: 100%; }
 .tab-btn.active { background: #fff; color: #000; }
 
 /* 2. Comparison Card */
-.comparison-card { grid-column: 3 / 4; grid-row: 1 / 2; justify-content: center;}
 .comp-header { margin-bottom: 20px; }
 .comp-val { font-size: 32px; font-weight: 800; }
 .comp-label { font-size: 12px; color: var(--muted); }
@@ -122,44 +117,12 @@ main { min-width: 0; width: 100%; }
 .bar-fill { height: 100%; background: var(--purple); border-radius: 6px; }
 .bar-fill.danger { background: var(--danger); }
 
-/* 3. Analytics Chart Card */
-.analytics-card { grid-column: 1 / 2; grid-row: 2 / 3; }
-.legend { display: flex; gap: 15px; font-size: 11px; color: var(--muted); }
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-.dot.income { background: #00f2fe; }
-.dot.expense { background: var(--purple); }
-.chart-container { flex: 1; min-height: 150px; position: relative; margin-top: 10px;}
+/* 3. Recent Transactions (Bar Chart) */
+.chart-container { flex: 1; min-height: 250px; position: relative; margin-top: 10px;}
 
-/* 4. Activity Grid Card */
-.activity-card { grid-column: 2 / 3; grid-row: 2 / 3; }
-.activity-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin-top: 10px;
-}
-.grid-square { aspect-ratio: 1; border-radius: 6px; background: rgba(255,255,255,0.05); }
-.grid-square.active { background: var(--purple); box-shadow: inset 0 0 10px rgba(166, 83, 255, 0.5); }
-.grid-footer { display: flex; justify-content: flex-end; align-items: center; gap: 10px; font-size: 10px; color: var(--muted); margin-top: 15px; }
-.color-scale { display: flex; gap: 4px; }
-.scale-box { width: 10px; height: 10px; border-radius: 2px; }
-.s1 { background: rgba(166, 83, 255, 0.2); }
-.s2 { background: rgba(166, 83, 255, 0.4); }
-.s3 { background: rgba(166, 83, 255, 0.7); }
-.s4 { background: var(--purple); }
-
-/* 5. Recent Transactions Card */
-.transactions-card { grid-column: 3 / 4; grid-row: 2 / 3; }
-.tx-list { display: flex; flex-direction: column; gap: 15px; }
-.tx-item { display: flex; align-items: center; gap: 12px; }
-.tx-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.08); border-radius: 8px; display: grid; place-items: center; font-size: 14px; }
-.tx-details { flex: 1; }
-.tx-name { font-size: 12px; font-weight: 600; }
-.tx-desc { font-size: 10px; color: var(--muted); }
-.tx-amount { font-size: 12px; font-weight: bold; color: #00ff96; }
-.tx-amount.danger { color: var(--danger); }
-
-/* Other Elements (Tables, Buttons, etc. - Kept from before) */
+/* ==========================================
+   TABLES & OTHERS
+   ========================================== */
 .panel { padding: 24px; margin-bottom: 18px; }
 .panel-head { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 10px;}
 .panel h3 { margin: 0; font-size: 18px; color: #fff; }
@@ -176,7 +139,8 @@ tr:hover { background: rgba(255,255,255,0.03); }
 
 input, select { width: 100%; padding: 12px 16px; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; transition: 0.3s; }
 input:focus { border-color: #4facfe; box-shadow: 0 0 10px rgba(79, 172, 254, 0.3); }
-select option { background: #0a1225; color: #fff; }
+select { color: #ffffff !important; background-color: rgba(20, 25, 45, 0.8) !important; }
+select option { background-color: #0a1225 !important; color: #ffffff !important; }
 .search { position: relative; flex: 1; }
 .search span { position: absolute; left: 14px; top: 12px; color: var(--muted); }
 .search input { padding-left: 40px; }
@@ -197,14 +161,9 @@ select option { background: #0a1225; color: #fff; }
 label { font-size: 12px; color: var(--muted); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-@media(max-width: 1024px) {
-  .dashboard-grid { grid-template-columns: 1fr 1fr; }
-  .total-revenue-card { grid-column: 1 / 3; }
-  .analytics-card { grid-column: 1 / 3; }
-}
 @media(max-width: 768px) {
-  .dashboard-grid { grid-template-columns: 1fr; }
-  .comparison-card, .activity-card, .transactions-card { grid-column: 1 / 2; }
   .topbar { flex-direction: column; align-items: flex-start; position: static; }
+  .nav { width: 100%; padding-bottom: 10px; }
+  .top-actions { width: 100%; justify-content: flex-end; }
   .form-grid { grid-template-columns: 1fr; }
    }
