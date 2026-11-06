@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Excel Support & Cost Fix
+// PDF-IMPORT.JS — Exact Slow Moving Cost Fix
 // ==========================================
 
 window.importedRows = [];
@@ -8,20 +8,12 @@ if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
-// Master Upload Function
 window.handleFileUpload = async function(event) {
   const file = event.target.files[0];
   if (!file) return;
-
-  // Check File Type
-  const fileName = file.name.toLowerCase();
-  if (fileName.endsWith('.csv')) {
-    handleCSV(file);
-  } else if (fileName.endsWith('.pdf')) {
-    handlePDF(file);
-  } else {
-    showToast('Sirf PDF ya CSV file upload karein!', 'error');
-  }
+  if (file.name.toLowerCase().endsWith('.csv')) handleCSV(file);
+  else if (file.name.toLowerCase().endsWith('.pdf')) handlePDF(file);
+  else showToast('Sirf PDF ya CSV file upload karein!', 'error');
 };
 
 // ==========================================
@@ -51,7 +43,7 @@ function handleCSV(file) {
           desc: row['Description'] || row['Desc'] || '',
           uom: row['UOM'] || row['Unit'] || 'NOS',
           qty: parseFloat(row['Qty'] || row['Quantity'] || row['Stock'] || 0),
-          cost: parseFloat(row['Rate'] || row['Cost'] || 0), // CSV se cost uthayega
+          cost: parseFloat(row['Rate'] || row['Cost'] || 0),
           parent: 'N/A'
         };
 
@@ -127,7 +119,6 @@ async function handlePDF(file) {
              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
              allRows.push(currentItem);
              
-             // Slow Moving ka alag parser
              if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
              else parseNormalLine(line.words, currentItem);
            } else if (currentItem) {
@@ -157,7 +148,7 @@ function finalizeData(allRows, importType) {
     const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
     if (map[key]) { 
       map[key].qty += r.qty; 
-      if(r.cost > 0) map[key].cost = r.cost; // Cost update karein
+      if(r.cost > 0) map[key].cost = r.cost;
     } else {
       map[key] = r;
     }
@@ -219,9 +210,10 @@ function parseNormalLine(words, item) {
   }
 }
 
-// Slow Moving Parser (Cost Fix)
+// SLOW MOVING PARSER (Ab Qty aur Cost dono exact uthayega)
 function parseSlowLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
+  const numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   
   for (let i = 0; i < words.length; i++) {
@@ -229,25 +221,30 @@ function parseSlowLine(words, item) {
   }
 
   if (uomI !== -1) {
+    // 1. Description: UOM se pehle ke saare words (code ko chhod kar)
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
     
+    // 2. UOM ke baad ke numbers nikaalein
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
-      if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+      if (numR.test(words[i].text)) {
+        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+      }
     }
     
-    // Slow moving mein UOM ke baad pehle Qty (Stock) aati hai, phir Cost (Rate)
+    // Slow Moving Format: Stock Qty (0 index), Rate (1 index), Value (2 index)
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
     
   } else {
+    // Agar line mein UOM nahi hai (Description continuation)
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
 // ==========================================
-// IMPORT CONFIRM
+// IMPORT CONFIRM (With Progress Bar)
 // ==========================================
 window.confirmImport = async function(btnElement) {
   if (!window.importedRows.length) return showToast('No data to import!', 'error');
@@ -258,6 +255,7 @@ window.confirmImport = async function(btnElement) {
   
   const originalText = btnElement ? btnElement.textContent : 'Import';
   if (btnElement) { btnElement.textContent = 'Importing...'; btnElement.disabled = true; }
+  
   if (progressBar) progressBar.style.display = 'block';
   if (progressText) progressText.style.display = 'block';
   if (progressFill) progressFill.style.width = '0%';
