@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — With Progress Animation
+// PDF-IMPORT.JS — With Fixed Slow Moving Cost
 // ==========================================
 
 window.importedRows = [];
@@ -8,9 +8,6 @@ if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
-// ==========================================
-// FILE UPLOAD HANDLER
-// ==========================================
 window.handleFileUpload = async function(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -19,6 +16,7 @@ window.handleFileUpload = async function(event) {
   else showToast('Sirf PDF ya CSV file upload karein!', 'error');
 };
 
+// CSV Handler
 function handleCSV(file) {
   const statusDiv = document.getElementById('pdfStatus');
   statusDiv.textContent = '⏳ Reading CSV...';
@@ -43,7 +41,7 @@ function handleCSV(file) {
           desc: row['Description'] || row['Desc'] || '',
           uom: row['UOM'] || row['Unit'] || 'NOS',
           qty: parseFloat(row['Qty'] || row['Quantity'] || row['Stock'] || 0),
-          cost: parseFloat(row['Rate'] || row['Cost'] || 0),
+          cost: parseFloat(row['Rate'] || row['Cost'] || 0), // CSV mein Cost uthayega
           parent: 'N/A'
         };
 
@@ -59,6 +57,7 @@ function handleCSV(file) {
   });
 }
 
+// PDF Handler
 async function handlePDF(file) {
   const statusDiv = document.getElementById('pdfStatus');
   const importType = document.getElementById('importType').value;
@@ -115,6 +114,8 @@ async function handlePDF(file) {
 
              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
              allRows.push(currentItem);
+             
+             // Slow Moving wali PDF ke liye alag function call karein
              if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
              else parseNormalLine(line.words, currentItem);
            } else if (currentItem) {
@@ -130,6 +131,7 @@ async function handlePDF(file) {
   }
 }
 
+// Data Merge
 function finalizeData(allRows, importType) {
   const map = {};
   allRows.forEach(r => {
@@ -161,9 +163,7 @@ function finalizeData(allRows, importType) {
   statusDiv.className = 'pdf-status success';
 }
 
-// ==========================================
-// PARSE HELPERS
-// ==========================================
+// BOM Parser
 function parseBomLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -178,6 +178,7 @@ function parseBomLine(words, item) {
   }
 }
 
+// Normal Inventory Parser
 function parseNormalLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -192,49 +193,50 @@ function parseNormalLine(words, item) {
   }
 }
 
+// Slow Moving Parser (Yahan Cost uthane ka fix hai)
 function parseSlowLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
-  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
+  
+  for (let i = 0; i < words.length; i++) {
+    if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
+  }
+
   if (uomI !== -1) {
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
-    let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-    if (nums.length >= 1) item.qty = nums[0];
-    if (nums.length >= 2) item.cost = nums[1];
+    
+    // Slow Moving mein UOM ke baad: Stock, Rate, Value aati hai
+    const nums = [];
+    for (let i = uomI + 1; i < words.length; i++) {
+      if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
+    }
+    
+    // Pehla number Stock hai, Dusra number Rate (Cost) hai
+    if (nums.length >= 1) item.qty = nums[0]; 
+    if (nums.length >= 2) item.cost = nums[1]; 
+    
   } else {
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
-// ==========================================
-// CONFIRM IMPORT (With 1-100% Animation)
-// ==========================================
+// Import to Firebase
 window.confirmImport = async function(btnElement) {
   if (!window.importedRows.length) return showToast('No data to import!', 'error');
-
   const importType = document.getElementById('importType').value;
-  
-  // Progress bar elements
   const progressBar = document.getElementById('importProgressBar');
   const progressFill = document.getElementById('importProgressFill');
   const progressText = document.getElementById('importProgressText');
   
-  // Button ko disable karein
   const originalText = btnElement ? btnElement.textContent : 'Import';
-  if (btnElement) {
-    btnElement.textContent = 'Importing...'; 
-    btnElement.disabled = true;
-  }
-
-  // Progress bar show karein
+  if (btnElement) { btnElement.textContent = 'Importing...'; btnElement.disabled = true; }
   if (progressBar) progressBar.style.display = 'block';
   if (progressText) progressText.style.display = 'block';
   if (progressFill) progressFill.style.width = '0%';
   if (progressText) progressText.textContent = '0%';
 
   try {
-    // Purana data delete karna hai toh
     if (document.getElementById('chkDeleteOld')?.checked) {
       if (progressText) progressText.textContent = 'Clearing old data...';
       const allData = await window.loadInventoryFromFirebase();
@@ -245,27 +247,19 @@ window.confirmImport = async function(btnElement) {
       }
     }
 
-    // Data save karein (Percentage ke sath)
     const toSave = window.importedRows.map(r => Object.assign({}, r, { source: `PDF (${importType})`, updatedAt: new Date().toISOString() }));
     const total = toSave.length;
     let count = 0;
 
     for (const item of toSave) {
-      // Aapke storage.js ka function
       await window.saveItemToFirebase(item); 
       count++;
-      
-      // Percentage calculate karein
       const percent = Math.round((count / total) * 100);
       if (progressFill) progressFill.style.width = percent + '%';
       if (progressText) progressText.textContent = percent + '% Importing...';
-      
-      // Chota sa delay taake animation nazar aaye (optional)
-      // await new Promise(r => setTimeout(r, 10)); 
     }
     
     showToast(`Successfully imported ${count} items!`, 'success');
-    
     document.getElementById('previewArea').style.display = 'none';
     document.getElementById('pdfStatus').textContent = `✓ Import complete: ${count} rows saved.`;
     document.getElementById('pdfFile').value = ''; 
@@ -282,9 +276,6 @@ window.confirmImport = async function(btnElement) {
     showToast('Import failed: ' + err.message, 'error');
     if (progressText) progressText.textContent = 'Error occurred!';
   } finally {
-    if (btnElement) {
-      btnElement.textContent = originalText; 
-      btnElement.disabled = false;
-    }
+    if (btnElement) { btnElement.textContent = originalText; btnElement.disabled = false; }
   }
 };
