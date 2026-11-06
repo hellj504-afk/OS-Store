@@ -1,5 +1,5 @@
 // ==========================================
-// APP.JS — Navigation & Page Controller
+// APP.JS — Navigation & Page Controller (Fixed)
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Navigation Click Event
   nav.addEventListener('click', (e) => {
-    // Jab icon ya text par click ho, toh parent button dhoondein
+    // Jab icon (SVG) ya text par click ho, toh closest button dhoondein
     const btn = e.target.closest('button');
     if (!btn) return;
 
@@ -47,9 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (targetPage === 'bom' && window.renderBOM) window.renderBOM();
     if (targetPage === 'issue' && window.renderIssue) window.renderIssue();
     if (targetPage === 'ir' && window.renderIR) window.renderIR();
-    
-    // Mobile view mein sidebar band karein (agar ho)
-    // (Optional logic)
   });
 
   // Firebase Ready event
