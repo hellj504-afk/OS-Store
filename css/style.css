@@ -1,14 +1,15 @@
 /* ==========================================
-   STOREOS — TOP NAVBAR GLASS THEME
+   STOREOS — DASHBOARD GRID DESIGN
    ========================================== */
 
 :root {
   --ink: #f0f4ff;
   --muted: #9aa7c7;
-  --line: rgba(255, 255, 255, 0.15);
-  --glass: rgba(20, 25, 45, 0.4);
+  --line: rgba(255, 255, 255, 0.1);
+  --glass: rgba(20, 25, 45, 0.6);
   --blue: #4facfe;
   --danger: #ff5e7e;
+  --purple: #a653ff;
 }
 
 * { box-sizing: border-box; }
@@ -29,8 +30,8 @@ button { cursor: pointer; }
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--line) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -38,7 +39,7 @@ button { cursor: pointer; }
 
 /* Main Shell */
 .shell { 
-  max-width: 1400px; 
+  max-width: 1440px; 
   margin: 0 auto; 
   padding: 20px; 
   display: flex; 
@@ -66,88 +67,99 @@ main { min-width: 0; width: 100%; }
 
 .nav { display: flex; flex-direction: row; gap: 5px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
 .nav::-webkit-scrollbar { display: none; } 
-.nav button { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: transparent; color: #9aa7c7; font-size: 12px; font-weight: 600; white-space: nowrap; transition: 0.2s; border: 1px solid transparent; }
-.nav button:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-.nav button.active { background: rgba(255, 255, 255, 0.1); color: #00f2fe; border: 1px solid rgba(0, 242, 254, 0.3); box-shadow: inset 0 0 10px rgba(0, 242, 254, 0.1); }
+.nav button { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 20px; background: rgba(255,255,255,0.05); color: #9aa7c7; font-size: 12px; font-weight: 600; white-space: nowrap; transition: 0.2s; border: 1px solid transparent; }
+.nav button:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.nav button.active { background: rgba(255, 255, 255, 0.15); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
 
 .top-actions { display: flex; align-items: center; gap: 10px; }
-.date-pill { font-size: 11px; padding: 8px 12px; border-radius: 10px; white-space: nowrap;}
-.avatar { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-weight: bold; background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
-
-/* Glowing Text */
-.glow-text {
-  text-shadow: 0 0 10px rgba(0, 242, 254, 0.6), 0 0 20px rgba(79, 172, 254, 0.4);
-  color: #fff;
-}
-
-/* Page Header */
-.page-header { margin-bottom: 20px; padding-left: 10px; }
-.page-header h1 { margin: 4px 0 0; font-size: 24px; }
-.eyebrow { font-size: 11px; color: var(--muted); letter-spacing: 1.3px; font-weight: 750; }
+.date-pill { font-size: 11px; padding: 8px 12px; border-radius: 20px; white-space: nowrap;}
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: bold; background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
 
 /* ==========================================
-   DASHBOARD DONUT CIRCLES
+   DASHBOARD NEW DESIGN
    ========================================== */
-.dashboard-circles {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-  padding: 20px 0;
+.welcome-header h1 {
+  font-size: 28px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  padding-left: 10px;
+}
+.welcome-header h1 span { font-weight: 800; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1.5fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
 }
 
-.circle-card {
+/* Cards Base */
+.card {
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  padding: 20px;
-  background: transparent !important; /* Remove glass box */
-  box-shadow: none !important;
-  border: none !important;
 }
+.card-title { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 15px;}
 
-.circle-progress {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: conic-gradient(#00f2fe calc(var(--percent) * 1%), rgba(255,255,255,0.1) 0);
+/* 1. Total Revenue Card */
+.total-revenue-card { grid-column: 1 / 3; grid-row: 1 / 2; }
+.revenue-value { font-size: 42px; font-weight: 800; margin-bottom: 5px; }
+.revenue-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;}
+.badge-green { background: rgba(0, 255, 150, 0.15); color: #00ff96; padding: 2px 8px; border-radius: 6px; font-weight: bold; }
+.revenue-tabs { display: flex; gap: 10px; }
+.tab-btn { background: rgba(255,255,255,0.05); color: var(--muted); padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.tab-btn.active { background: #fff; color: #000; }
+
+/* 2. Comparison Card */
+.comparison-card { grid-column: 3 / 4; grid-row: 1 / 2; justify-content: center;}
+.comp-header { margin-bottom: 20px; }
+.comp-val { font-size: 32px; font-weight: 800; }
+.comp-label { font-size: 12px; color: var(--muted); }
+.comp-bars { display: flex; flex-direction: column; gap: 12px; }
+.bar-group { display: flex; align-items: center; gap: 10px; }
+.bar-label { font-size: 11px; width: 80px; color: var(--muted); }
+.bar-track { flex: 1; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--purple); border-radius: 6px; }
+.bar-fill.danger { background: var(--danger); }
+
+/* 3. Analytics Chart Card */
+.analytics-card { grid-column: 1 / 2; grid-row: 2 / 3; }
+.legend { display: flex; gap: 15px; font-size: 11px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.dot.income { background: #00f2fe; }
+.dot.expense { background: var(--purple); }
+.chart-container { flex: 1; min-height: 150px; position: relative; margin-top: 10px;}
+
+/* 4. Activity Grid Card */
+.activity-card { grid-column: 2 / 3; grid-row: 2 / 3; }
+.activity-grid {
   display: grid;
-  place-items: center;
-  position: relative;
-  box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 10px;
 }
+.grid-square { aspect-ratio: 1; border-radius: 6px; background: rgba(255,255,255,0.05); }
+.grid-square.active { background: var(--purple); box-shadow: inset 0 0 10px rgba(166, 83, 255, 0.5); }
+.grid-footer { display: flex; justify-content: flex-end; align-items: center; gap: 10px; font-size: 10px; color: var(--muted); margin-top: 15px; }
+.color-scale { display: flex; gap: 4px; }
+.scale-box { width: 10px; height: 10px; border-radius: 2px; }
+.s1 { background: rgba(166, 83, 255, 0.2); }
+.s2 { background: rgba(166, 83, 255, 0.4); }
+.s3 { background: rgba(166, 83, 255, 0.7); }
+.s4 { background: var(--purple); }
 
-.circle-progress.danger-circle {
-  background: conic-gradient(#ff5e7e calc(var(--percent) * 1%), rgba(255,255,255,0.1) 0);
-  box-shadow: 0 0 20px rgba(255, 94, 126, 0.2);
-}
+/* 5. Recent Transactions Card */
+.transactions-card { grid-column: 3 / 4; grid-row: 2 / 3; }
+.tx-list { display: flex; flex-direction: column; gap: 15px; }
+.tx-item { display: flex; align-items: center; gap: 12px; }
+.tx-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.08); border-radius: 8px; display: grid; place-items: center; font-size: 14px; }
+.tx-details { flex: 1; }
+.tx-name { font-size: 12px; font-weight: 600; }
+.tx-desc { font-size: 10px; color: var(--muted); }
+.tx-amount { font-size: 12px; font-weight: bold; color: #00ff96; }
+.tx-amount.danger { color: var(--danger); }
 
-.circle-inner {
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
-  background: #0a1225; /* Dark inner circle */
-  display: grid;
-  place-items: center;
-  font-size: 28px;
-  font-weight: 800;
-  color: #fff;
-  box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
-}
-
-.circle-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* ==========================================
-   OTHER STYLES
-   ========================================== */
-.quote-bar { padding: 18px 24px; margin-bottom: 24px; font-size: 14px; text-align: center; font-style: italic; background: linear-gradient(90deg, rgba(0,242,254,0.1), rgba(240,147,251,0.1)); border-left: 4px solid #00f2fe; }
+/* Other Elements (Tables, Buttons, etc. - Kept from before) */
 .panel { padding: 24px; margin-bottom: 18px; }
 .panel-head { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 10px;}
 .panel h3 { margin: 0; font-size: 18px; color: #fff; }
@@ -157,10 +169,9 @@ th { text-align: left; padding: 14px; color: var(--muted); font-size: 11px; text
 td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #dce6ff; }
 tr:hover { background: rgba(255,255,255,0.03); }
 
-.glass-clear-btn { position: relative; background: transparent !important; color: #ff5e7e !important; border: 1px solid rgba(255, 94, 126, 0.4) !important; border-radius: 10px; padding: 8px 15px; font-weight: 700; font-size: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s ease; z-index: 1; backdrop-filter: blur(10px); }
+.glass-clear-btn { position: relative; background: transparent !important; color: #ff5e7e !important; border: 1px solid rgba(255, 94, 126, 0.4) !important; border-radius: 20px; padding: 8px 15px; font-weight: 700; font-size: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s ease; z-index: 1; backdrop-filter: blur(10px); }
 .glass-clear-btn:hover { border-color: rgba(255, 94, 126, 0.8) !important; box-shadow: 0 0 15px rgba(255, 94, 126, 0.2); }
-
-.glass-blue-btn { position: relative; background: rgba(79, 172, 254, 0.1) !important; color: #00f2fe !important; border: 1px solid rgba(79, 172, 254, 0.4) !important; border-radius: 10px; padding: 8px 15px; font-weight: 700; font-size: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s ease; z-index: 1; backdrop-filter: blur(10px); }
+.glass-blue-btn { position: relative; background: rgba(79, 172, 254, 0.1) !important; color: #00f2fe !important; border: 1px solid rgba(79, 172, 254, 0.4) !important; border-radius: 20px; padding: 8px 15px; font-weight: 700; font-size: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s ease; z-index: 1; backdrop-filter: blur(10px); }
 .glass-blue-btn:hover { border-color: rgba(79, 172, 254, 0.8) !important; box-shadow: 0 0 15px rgba(79, 172, 254, 0.3); background: rgba(79, 172, 254, 0.15) !important; }
 
 input, select { width: 100%; padding: 12px 16px; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; transition: 0.3s; }
@@ -186,15 +197,14 @@ select option { background: #0a1225; color: #fff; }
 label { font-size: 12px; color: var(--muted); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-.danger-pulse { animation: pulseRed 2s infinite; }
-@keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(255, 94, 126, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(255, 94, 126, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 94, 126, 0); } }
-
-@media(max-width: 768px) {
-  .topbar { flex-direction: column; align-items: flex-start; position: static; }
-  .nav { width: 100%; padding-bottom: 10px; }
-  .top-actions { width: 100%; justify-content: flex-end; }
-  .form-grid { grid-template-columns: 1fr; }
-  .dashboard-circles { gap: 10px; }
-  .circle-progress { width: 120px; height: 120px; }
-  .circle-inner { width: 90px; height: 90px; font-size: 20px; }
+@media(max-width: 1024px) {
+  .dashboard-grid { grid-template-columns: 1fr 1fr; }
+  .total-revenue-card { grid-column: 1 / 3; }
+  .analytics-card { grid-column: 1 / 3; }
 }
+@media(max-width: 768px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .comparison-card, .activity-card, .transactions-card { grid-column: 1 / 2; }
+  .topbar { flex-direction: column; align-items: flex-start; position: static; }
+  .form-grid { grid-template-columns: 1fr; }
+   }
