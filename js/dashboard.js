@@ -1,5 +1,5 @@
 // ==========================================
-// DASHBOARD.JS — Donut Stats & K/M/B Cost
+// DASHBOARD.JS — Stats & Store Cost
 // ==========================================
 
 window.updateDashboardStats = function() {
@@ -9,9 +9,17 @@ window.updateDashboardStats = function() {
   const uniqueCodes = new Set(data.map(i => i.code));
   if (document.getElementById('statItems')) document.getElementById('statItems').textContent = uniqueCodes.size;
 
-  const totalValue = data.reduce((sum, item) => sum + ((Number(item.qty) || 0) * (Number(item.cost) || 0)), 0);
-  if (document.getElementById('statValue')) document.getElementById('statValue').textContent = formatCost(totalValue);
+  // 1. Total Inventory Cost (WIP)
+  const invData = data.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly') && !i.source?.includes('store'));
+  const totalInvValue = invData.reduce((sum, item) => sum + ((Number(item.qty) || 0) * (Number(item.cost) || 0)), 0);
+  if (document.getElementById('statValue')) document.getElementById('statValue').textContent = formatCost(totalInvValue);
 
+  // 2. Store Cost (NEW)
+  const storeData = data.filter(i => i.source && i.source.includes('store'));
+  const totalStoreValue = storeData.reduce((sum, item) => sum + ((Number(item.qty) || 0) * (Number(item.cost) || 0)), 0);
+  if (document.getElementById('statStoreValue')) document.getElementById('statStoreValue').textContent = formatCost(totalStoreValue);
+
+  // 3. Low Stock Count
   let lowStockCount = 0;
   const merged = {};
   data.forEach(item => {
