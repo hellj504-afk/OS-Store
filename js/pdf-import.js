@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Only PDF & Cost Fix
+// PDF-IMPORT.JS — Progress Bar & Cost Fix
 // ==========================================
 
 window.importedRows = [];
@@ -144,7 +144,6 @@ function parseNormalLine(words, item) {
   }
 }
 
-// Slow Moving Cost Fix
 function parseSlowLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -155,7 +154,6 @@ function parseSlowLine(words, item) {
     for (let i = uomI + 1; i < words.length; i++) {
       if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    // Slow Moving: Pehla number Qty, Dusra number Cost (Rate)
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
   } else {
@@ -173,6 +171,7 @@ window.confirmImport = async function(btnElement) {
   
   const originalText = btnElement ? btnElement.textContent : 'Import';
   if (btnElement) { btnElement.textContent = 'Importing...'; btnElement.disabled = true; }
+  
   if (progressBar) progressBar.style.display = 'block';
   if (progressText) progressText.style.display = 'block';
   if (progressFill) progressFill.style.width = '0%';
