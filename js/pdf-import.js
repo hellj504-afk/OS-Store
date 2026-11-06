@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Exact Slow Moving Cost Fix
+// PDF-IMPORT.JS — With Fixed Slow Moving Cost
 // ==========================================
 
 window.importedRows = [];
@@ -16,12 +16,10 @@ window.handleFileUpload = async function(event) {
   else showToast('Sirf PDF ya CSV file upload karein!', 'error');
 };
 
-// ==========================================
-// 1. CSV / EXCEL HANDLER
-// ==========================================
+// CSV Handler
 function handleCSV(file) {
   const statusDiv = document.getElementById('pdfStatus');
-  statusDiv.textContent = '⏳ Reading Excel/CSV...';
+  statusDiv.textContent = '⏳ Reading CSV...';
   statusDiv.className = 'pdf-status';
   document.getElementById('previewArea').style.display = 'none';
 
@@ -43,7 +41,7 @@ function handleCSV(file) {
           desc: row['Description'] || row['Desc'] || '',
           uom: row['UOM'] || row['Unit'] || 'NOS',
           qty: parseFloat(row['Qty'] || row['Quantity'] || row['Stock'] || 0),
-          cost: parseFloat(row['Rate'] || row['Cost'] || 0),
+          cost: parseFloat(row['Rate'] || row['Cost'] || 0), // CSV mein Cost uthayega
           parent: 'N/A'
         };
 
@@ -59,9 +57,7 @@ function handleCSV(file) {
   });
 }
 
-// ==========================================
-// 2. PDF HANDLER
-// ==========================================
+// PDF Handler
 async function handlePDF(file) {
   const statusDiv = document.getElementById('pdfStatus');
   const importType = document.getElementById('importType').value;
@@ -119,6 +115,7 @@ async function handlePDF(file) {
              currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
              allRows.push(currentItem);
              
+             // Slow Moving wali PDF ke liye alag function call karein
              if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
              else parseNormalLine(line.words, currentItem);
            } else if (currentItem) {
@@ -130,13 +127,11 @@ async function handlePDF(file) {
     }
     finalizeData(allRows, importType);
   } catch (err) {
-    statusDiv.textContent = '❌ PDF Error: ' + err.message;
+    statusDiv.textContent = '❌ Error: ' + err.message;
   }
 }
 
-// ==========================================
-// DATA MERGE
-// ==========================================
+// Data Merge
 function finalizeData(allRows, importType) {
   const map = {};
   allRows.forEach(r => {
@@ -146,12 +141,8 @@ function finalizeData(allRows, importType) {
       if (m) { r.subInv = m[1]; r.desc = m[2]; }
     }
     const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
-    if (map[key]) { 
-      map[key].qty += r.qty; 
-      if(r.cost > 0) map[key].cost = r.cost;
-    } else {
-      map[key] = r;
-    }
+    if (map[key]) { map[key].qty += r.qty; if(r.cost>0) map[key].cost = r.cost; }
+    else map[key] = r;
   });
   
   window.importedRows = Object.values(map);
@@ -165,23 +156,14 @@ function finalizeData(allRows, importType) {
   document.getElementById('previewCount').textContent = window.importedRows.length;
   
   document.getElementById('previewTable').innerHTML = window.importedRows.slice(0, 200).map(r => `
-    <tr>
-      <td>${r.parent || 'N/A'}</td>
-      <td class="code">${r.code}</td>
-      <td>${r.desc}</td>
-      <td>${r.uom}</td>
-      <td>${formatNumber(r.qty)}</td>
-      <td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td>
-    </tr>
+    <tr><td>${r.parent || 'N/A'}</td><td class="code">${r.code}</td><td>${r.desc}</td><td>${r.uom}</td><td>${formatNumber(r.qty)}</td><td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td></tr>
   `).join('');
 
   statusDiv.textContent = `✓ Extracted ${window.importedRows.length} rows.`;
   statusDiv.className = 'pdf-status success';
 }
 
-// ==========================================
-// PARSERS
-// ==========================================
+// BOM Parser
 function parseBomLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -196,6 +178,7 @@ function parseBomLine(words, item) {
   }
 }
 
+// Normal Inventory Parser
 function parseNormalLine(words, item) {
   const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
@@ -210,10 +193,9 @@ function parseNormalLine(words, item) {
   }
 }
 
-// SLOW MOVING PARSER (Ab Qty aur Cost dono exact uthayega)
+// Slow Moving Parser (Yahan Cost uthane ka fix hai)
 function parseSlowLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
-  const numR = /^[\d,]+\.?\d*$/;
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
   
   for (let i = 0; i < words.length; i++) {
@@ -221,31 +203,25 @@ function parseSlowLine(words, item) {
   }
 
   if (uomI !== -1) {
-    // 1. Description: UOM se pehle ke saare words (code ko chhod kar)
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
     
-    // 2. UOM ke baad ke numbers nikaalein
+    // Slow Moving mein UOM ke baad: Stock, Rate, Value aati hai
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
-      if (numR.test(words[i].text)) {
-        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-      }
+      if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
     
-    // Slow Moving Format: Stock Qty (0 index), Rate (1 index), Value (2 index)
+    // Pehla number Stock hai, Dusra number Rate (Cost) hai
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
     
   } else {
-    // Agar line mein UOM nahi hai (Description continuation)
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
 }
 
-// ==========================================
-// IMPORT CONFIRM (With Progress Bar)
-// ==========================================
+// Import to Firebase
 window.confirmImport = async function(btnElement) {
   if (!window.importedRows.length) return showToast('No data to import!', 'error');
   const importType = document.getElementById('importType').value;
@@ -255,7 +231,6 @@ window.confirmImport = async function(btnElement) {
   
   const originalText = btnElement ? btnElement.textContent : 'Import';
   if (btnElement) { btnElement.textContent = 'Importing...'; btnElement.disabled = true; }
-  
   if (progressBar) progressBar.style.display = 'block';
   if (progressText) progressText.style.display = 'block';
   if (progressFill) progressFill.style.width = '0%';
