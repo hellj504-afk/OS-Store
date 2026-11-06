@@ -1,5 +1,5 @@
 // ==========================================
-// INVENTORY.JS — Strict Slow Moving Filter
+// INVENTORY.JS — Cost Sync & Search
 // ==========================================
 
 window.inventoryData = [];
@@ -9,6 +9,7 @@ window.isDataLoaded = false;
 function getSmartCost(item) {
   let cost = Number(item.cost) || 0;
   if (cost === 0 && window.inventoryData) {
+    // Search in Slow Moving for exact code match
     const slowItem = window.inventoryData.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
     if (slowItem && Number(slowItem.cost) > 0) {
       cost = Number(slowItem.cost);
@@ -93,6 +94,8 @@ window.refreshInventoryData = async function() {
   if (window.renderAlerts) renderAlerts();
   if (window.updateDashboardStats) updateDashboardStats();
   if (window.renderBOM) renderBOM();
+  if (window.renderIssue) renderIssue();
+  if (window.renderIR) renderIR();
 };
 
 window.renderInventory = function() {
@@ -154,12 +157,9 @@ window.renderStore = function() {
   `}).join('');
 };
 
-// ✅ STRICT: Slow Moving Filter
 window.renderSlowMoving = function() {
   const tbody = document.getElementById('slowTable'); if (!tbody) return;
   const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
-  
-  // Only items where source includes 'slow_moving'
   let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
   data = data.filter(i => !query || i.code.toLowerCase().includes(query));
   
