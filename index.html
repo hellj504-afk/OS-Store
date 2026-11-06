@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StoreOS — Inventory Workspace</title>
+<title>StoreOS — Rainbow Glass Workspace</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <link rel="stylesheet" href="css/background.css">
 <link rel="stylesheet" href="css/style.css">
@@ -36,63 +35,47 @@
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M160 160 L480 160 L480 210 L160 210 Z" fill="#4FD1C5"/><path d="M140 360 L200 360 L200 480 L140 480 Z" fill="#4FD1C5"/><path d="M320 350 C320 350 310 340 290 340 C270 340 260 350 260 370 L260 390 L280 390 L280 370 C280 360 290 350 300 350 C310 350 310 360 310 370 L310 390 L330 390 L330 370 C330 360 340 350 350 350 C360 350 370 360 370 370 L370 390 L390 390 L390 370 C390 350 380 340 360 340 C340 340 330 350 320 350 Z" stroke="#4FD1C5" stroke-width="20" stroke-linejoin="round"/><path d="M100 240 L320 150 L540 240" stroke="black" stroke-width="25" stroke-linejoin="round"/><path d="M130 240 V480 H510 V240" stroke="black" stroke-width="25" stroke-linejoin="round"/><rect x="100" y="240" width="440" height="60" rx="20" stroke="black" stroke-width="25" fill="white"/><path d="M150 300 C150 320 170 320 170 300" stroke="black" stroke-width="20" stroke-linecap="round"/><path d="M220 300 C220 320 240 320 240 300" stroke="black" stroke-width="20" stroke-linecap="round"/><path d="M290 300 C290 320 310 320 310 300" stroke="black" stroke-width="20" stroke-linecap="round"/><path d="M360 300 C360 320 380 320 380 300" stroke="black" stroke-width="20" stroke-linecap="round"/><path d="M430 300 C430 320 450 320 450 300" stroke="black" stroke-width="20" stroke-linecap="round"/><path d="M500 300 C500 320 520 320 520 300" stroke="black" stroke-width="20" stroke-linecap="round"/><rect x="90" y="480" width="460" height="40" rx="10" stroke="black" stroke-width="25" fill="white"/><rect x="150" y="300" width="100" height="180" stroke="black" stroke-width="20" fill="white"/><rect x="280" y="300" width="200" height="180" stroke="black" stroke-width="20" fill="white"/></svg>
         Dashboard
       </button>
-      
       <button data-page="inventory" onclick="window.showPage('inventory')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M320 100 L520 220 V420 L320 540 L120 420 V220 L320 100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/><path d="M120 220 L320 340 L520 220" stroke="black" stroke-width="25" stroke-linejoin="round"/><path d="M320 540 V340" stroke="black" stroke-width="25" stroke-linejoin="round"/><path d="M220 160 L420 280" stroke="#4FD1C5" stroke-width="20" stroke-linecap="round"/></svg>
         Custom Inventory
       </button>
-      
       <button data-page="slow_moving" onclick="window.showPage('slow_moving')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><circle cx="320" cy="320" r="200" stroke="black" stroke-width="25" fill="white"/><circle cx="320" cy="320" r="40" fill="#4FD1C5"/><path d="M320 200 V320 L400 360" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Slow Moving
       </button>
-      
       <button data-page="bom" onclick="window.showPage('bom')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M320 120 L540 240 L320 360 L100 240 L320 120Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/><path d="M100 360 L320 480 L540 360" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/><path d="M100 240 V440" stroke="black" stroke-width="25"/><path d="M540 240 V440" stroke="black" stroke-width="25"/><path d="M320 360 V480" stroke="#4FD1C5" stroke-width="25"/></svg>
         BOM Management
       </button>
-      
       <button data-page="issue" onclick="window.showPage('issue')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M160 400 V500 H480 V400" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round" fill="white"/><path d="M320 400 V120" stroke="black" stroke-width="25" stroke-linecap="round"/><path d="M200 240 L320 120 L440 240" stroke="#4FD1C5" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Issue Voucher
       </button>
-      
       <button data-page="ir" onclick="window.showPage('ir')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M160 400 V500 H480 V400" stroke="black" stroke-width="25" stroke-linecap="round" stroke-linejoin="round" fill="white"/><path d="M320 120 V400" stroke="black" stroke-width="25" stroke-linecap="round"/><path d="M200 280 L320 400 L440 280" stroke="#4FD1C5" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/></svg>
         IR / Move Order
       </button>
-      
       <button data-page="failure" onclick="window.showPage('failure')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M320 100 L560 520 H80 L320 100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/><path d="M320 240 V380" stroke="#4FD1C5" stroke-width="25" stroke-linecap="round"/><circle cx="320" cy="450" r="15" fill="#4FD1C5"/></svg>
         Failure & Scrap
       </button>
-      
       <button data-page="alerts" onclick="window.showPage('alerts')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M320 120 C220 120 160 200 160 300 V400 L120 480 H520 L480 400 V300 C480 200 420 120 320 120Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/><path d="M260 520 C260 560 380 560 380 520" stroke="black" stroke-width="25" stroke-linecap="round"/><circle cx="320" cy="220" r="20" fill="#4FD1C5"/></svg>
         Low Stock Alerts
       </button>
-      
       <button data-page="pdf" onclick="window.showPage('pdf')">
         <svg width="20" height="20" viewBox="0 0 640 640" fill="none"><path d="M180 100 H360 L480 220 V520 H180 V100Z" stroke="black" stroke-width="25" stroke-linejoin="round" fill="white"/><path d="M360 100 V220 H480" stroke="black" stroke-width="25" stroke-linejoin="round"/><path d="M260 360 V440 M320 360 V440 M260 400 H320" stroke="#4FD1C5" stroke-width="20" stroke-linecap="round"/></svg>
-        PDF / Excel Import
+        PDF Import
       </button>
     </nav>
     
-    <div class="side-bottom glass-effect">
-      <strong>✧ Cloud Sync</strong>
-    </div>
+    <div class="side-bottom glass-effect"><strong>✧ Cloud Sync</strong></div>
   </aside>
 
   <main>
     <header class="topbar glass-effect">
-      <div>
-        <div class="eyebrow">STORE OPERATIONS / OVERVIEW</div>
-        <h1 id="headerTitle">Dashboard</h1>
-      </div>
-      <div class="top-actions">
-        <div class="date-pill glass-effect" id="todayDate">—</div>
-        <div class="avatar glass-effect">S</div>
-      </div>
+      <div><div class="eyebrow">STORE OPERATIONS / OVERVIEW</div><h1 id="headerTitle">Dashboard</h1></div>
+      <div class="top-actions"><div class="date-pill glass-effect" id="todayDate">—</div><div class="avatar glass-effect">S</div></div>
     </header>
 
     <!-- DASHBOARD -->
@@ -109,8 +92,21 @@
     <!-- INVENTORY -->
     <section id="page-inventory" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Custom Inventory</h3></div><div><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear All</button><button class="primary water-btn" onclick="openItemModal()">＋ Add</button></div></div>
-        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="invSearch" placeholder="Search..." oninput="renderInventory()"></div></div>
+        <div class="panel-head">
+          <div><h3>Custom Inventory</h3></div>
+          <div>
+            <button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear All</button>
+            <button class="primary water-btn" onclick="openManualAdd('inventory')">＋ Add Manual</button>
+          </div>
+        </div>
+        <div class="search-row">
+          <div class="search glass-effect"><span>⌕</span><input id="invSearch" placeholder="Search..." oninput="renderInventory()"></div>
+          <select class="filter glass-effect" id="invFilterSubInv" onchange="renderInventory()">
+            <option value="all">All Sub Inventories</option>
+            <option value="200">200 - WIP</option>
+            <option value="002">002 - Raw Material</option>
+          </select>
+        </div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
       </div>
     </section>
@@ -118,17 +114,46 @@
     <!-- SLOW MOVING -->
     <section id="page-slow_moving" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Slow Moving</h3></div><div><button class="glass-clear-btn" onclick="clearSection('slow_moving', this)">Clear</button></div></div>
-        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="slowSearch" placeholder="Search..." oninput="renderSlowMoving()"></div></div>
-        <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Rate</th><th>Value</th></tr></thead><tbody id="slowTable"></tbody></table></div>
+        <div class="panel-head">
+          <div><h3>Slow Moving</h3></div>
+          <div>
+            <button class="glass-clear-btn" onclick="clearSection('slow_moving', this)">Clear</button>
+            <button class="primary water-btn" onclick="openManualAdd('slow_moving')">＋ Add Manual</button>
+          </div>
+        </div>
+        <div class="search-row">
+          <div class="search glass-effect"><span>⌕</span><input id="slowSearch" placeholder="Search..." oninput="renderSlowMoving()"></div>
+          <!-- Slow Moving Filter (UOM) -->
+          <select class="filter glass-effect" id="slowFilterUom" onchange="renderSlowMoving()">
+            <option value="all">All UOM</option>
+            <option value="NOS">NOS</option>
+            <option value="KGS">KGS</option>
+            <option value="MTR">MTR</option>
+          </select>
+        </div>
+        <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Rate</th><th>Value</th><th>Action</th></tr></thead><tbody id="slowTable"></tbody></table></div>
       </div>
     </section>
 
     <!-- BOM -->
     <section id="page-bom" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>BOM Management</h3></div><div><button class="glass-clear-btn" onclick="clearSection('bom', this)">Clear BOM</button></div></div>
-        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div><select class="filter glass-effect" id="bomFilterType" onchange="renderBOM()"><option value="all">All Types</option><option value="pre_assembly">Pre Assembly</option><option value="final_assembly">Final Assembly</option><option value="bom">BOM Detail</option></select></div>
+        <div class="panel-head">
+          <div><h3>BOM Management</h3></div>
+          <div>
+            <button class="glass-clear-btn" onclick="clearSection('bom', this)">Clear BOM</button>
+            <button class="primary water-btn" onclick="openManualAdd('bom')">＋ Add Manual</button>
+          </div>
+        </div>
+        <div class="search-row">
+          <div class="search glass-effect"><span>⌕</span><input id="bomSearch" placeholder="Search..." oninput="renderBOM()"></div>
+          <select class="filter glass-effect" id="bomFilterType" onchange="renderBOM()">
+            <option value="all">All Types</option>
+            <option value="pre_assembly">Pre Assembly</option>
+            <option value="final_assembly">Final Assembly</option>
+            <option value="bom">BOM Detail</option>
+          </select>
+        </div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Type</th><th>Parent</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div>
       </div>
     </section>
@@ -136,8 +161,13 @@
     <!-- ISSUE -->
     <section id="page-issue" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Issue Voucher</h3></div><div><button class="glass-clear-btn" onclick="clearSection('issue_voucher', this)">Clear</button></div></div>
-        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="issueSearch" placeholder="Search..." oninput="renderIssue()"></div></div>
+        <div class="panel-head">
+          <div><h3>Issue Voucher</h3></div>
+          <div>
+            <button class="glass-clear-btn" onclick="clearSection('issue_voucher', this)">Clear</button>
+            <button class="primary water-btn" onclick="openManualAdd('issue_voucher')">＋ Add Manual</button>
+          </div>
+        </div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div>
       </div>
     </section>
@@ -145,8 +175,13 @@
     <!-- IR -->
     <section id="page-ir" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>IR / Move Order</h3></div><div><button class="glass-clear-btn" onclick="clearSection('ir_voucher', this)">Clear</button></div></div>
-        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="irSearch" placeholder="Search..." oninput="renderIR()"></div></div>
+        <div class="panel-head">
+          <div><h3>IR / Move Order</h3></div>
+          <div>
+            <button class="glass-clear-btn" onclick="clearSection('ir_voucher', this)">Clear</button>
+            <button class="primary water-btn" onclick="openManualAdd('ir_voucher')">＋ Add Manual</button>
+          </div>
+        </div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div>
       </div>
     </section>
@@ -154,7 +189,13 @@
     <!-- FAILURE -->
     <section id="page-failure" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>Scrap / Failure</h3></div><div><button class="glass-clear-btn" onclick="clearSection('failure', this)">Clear</button></div></div>
+        <div class="panel-head">
+          <div><h3>Scrap / Failure</h3></div>
+          <div>
+            <button class="glass-clear-btn" onclick="clearSection('failure', this)">Clear</button>
+            <button class="primary water-btn" onclick="openManualAdd('failure')">＋ Add Manual</button>
+          </div>
+        </div>
         <div class="form-grid" style="margin-bottom:20px; padding:15px;">
           <div class="field"><label>FG Code</label><input class="glass-effect" id="failCode" placeholder="Enter FG Code"></div>
           <div class="field"><label>Failure Qty</label><input class="glass-effect" id="failQty" type="number" step="0.01" placeholder="0.00"></div>
@@ -171,7 +212,6 @@
     <section id="page-alerts" class="section-page">
       <div class="panel glass-effect">
         <div class="panel-head"><div><h3>⚠️ Low Stock Alerts</h3></div><div><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear Inventory</button></div></div>
-        <div class="search-row"><div class="search glass-effect"><span>⌕</span><input id="alertSearch" placeholder="Search..." oninput="renderAlerts()"></div></div>
         <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div>
       </div>
     </section>
@@ -179,45 +219,49 @@
     <!-- PDF IMPORT -->
     <section id="page-pdf" class="section-page">
       <div class="panel glass-effect">
-        <div class="panel-head"><div><h3>📄 PDF & Excel Import</h3></div></div>
-        <div class="form-grid" style="margin-bottom:16px"><div class="field"><label>Import Type</label><select class="glass-effect" id="importType"><option value="inventory">Inventory</option><option value="slow_moving">Slow Moving</option><option value="pre_assembly">Pre Assembly</option><option value="final_assembly">Final Assembly</option><option value="bom">BOM Detail</option><option value="issue_voucher">Issue Voucher</option><option value="ir_voucher">IR / Move Order</option><option value="failure">Failure</option></select></div></div>
-        <div class="field" style="margin-bottom:16px"><label style="display:flex; align-items:center; gap:8px; cursor:pointer; color: #ff5e7e; font-weight: bold;"><input type="checkbox" id="chkDeleteOld" style="width:auto; transform:scale(1.2);"> Purana Data Delete karein</label></div>
-        <div class="import-box glass-effect" onclick="document.getElementById('pdfFile').click()"><div style="font-size:36px;margin-bottom:10px">📥</div><div style="font-weight:700;font-size:14px">Click to Upload PDF or CSV</div><input type="file" id="pdfFile" accept=".pdf, .csv" style="display:none" onchange="handleFileUpload(event)"></div>
+        <div class="panel-head"><div><h3>📄 PDF Import</h3></div></div>
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="field">
+            <label>Import Type</label>
+            <select class="glass-effect" id="importType">
+              <option value="inventory">Inventory</option>
+              <option value="slow_moving">Slow Moving</option>
+              <option value="pre_assembly">Pre Assembly</option>
+              <option value="final_assembly">Final Assembly</option>
+              <option value="bom">BOM Detail</option>
+              <option value="issue_voucher">Issue Voucher</option>
+              <option value="ir_voucher">IR / Move Order</option>
+              <option value="failure">Failure</option>
+            </select>
+          </div>
+        </div>
+        <div class="import-box glass-effect" onclick="document.getElementById('pdfFile').click()">
+          <div style="font-size:36px;margin-bottom:10px">📥</div>
+          <div style="font-weight:700;font-size:14px">Click to Upload PDF</div>
+          <input type="file" id="pdfFile" accept=".pdf" style="display:none" onchange="handleFileUpload(event)">
+        </div>
         <div id="pdfStatus" class="pdf-status"></div>
         <div id="importProgressBar" style="display:none; margin-top:15px; width:100%; height:10px; background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden;"><div id="importProgressFill" style="width:0%; height:100%; background:linear-gradient(90deg, #00f2fe, #4facfe, #f093fb); transition: width 0.1s;"></div></div>
         <div id="importProgressText" style="display:none; text-align:center; font-size:12px; margin-top:5px; font-weight:bold; color:#4facfe;">0%</div>
-        <div id="previewArea" style="display:none; margin-top:20px;"><div class="preview-head"><strong>Preview: <span id="previewCount">0</span> rows</strong><button class="primary water-btn" onclick="confirmImport(this)">✓ Import Now</button></div><div class="table-wrap glass-effect" style="max-height:420px;overflow:auto"><table><thead><tr><th>Parent</th><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table></div></div>
+        <div id="previewArea" style="display:none; margin-top:20px;">
+          <div class="preview-head"><strong>Preview: <span id="previewCount">0</span> rows</strong><button class="primary water-btn" onclick="confirmImport(this)">✓ Import Now</button></div>
+          <div class="table-wrap glass-effect" style="max-height:420px;overflow:auto"><table><thead><tr><th>Parent</th><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table></div>
+        </div>
       </div>
     </section>
   </main>
 </div>
 
-<!-- Modal -->
+<!-- MANUAL ADD MODAL -->
 <div class="modal" id="itemModal">
   <div class="modal-card glass-effect">
-    <div class="modal-head"><h3>Add / Edit Item</h3><button class="close glass-effect" onclick="closeItemModal()">×</button></div>
+    <div class="modal-head"><h3>Add Item Manually</h3><button class="close glass-effect" onclick="closeItemModal()">×</button></div>
     <div class="form-grid">
-      <div class="field"><label>Item Code *</label><input class="glass-effect" id="fCode"></div>
-      <div class="field"><label>Sub Inv</label><input class="glass-effect" id="fSubInv"></div>
-      <div class="field"><label>UOM</label><input class="glass-effect" id="fUom"></div>
-      <div class="field"><label>Quantity</label><input class="glass-effect" id="fQty" type="number" step="0.01"></div>
-      <div class="field"><label>Cost</label><input class="glass-effect" id="fCost" type="number" step="0.01"></div>
-      <div class="field full"><label>Description</label><input class="glass-effect" id="fDesc"></div>
-    </div>
-    <div class="modal-actions"><button class="secondary water-btn" onclick="closeItemModal()">Cancel</button><button class="primary water-btn" onclick="saveItem()">Save Item</button></div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<!-- Scripts -->
-<script type="module" src="js/firebase-config.js"></script>
-<script type="module" src="js/storage.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/inventory.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/pdf-import.js"></script>
-<script src="js/bom.js"></script>
-<script src="js/app.js"></script>
-</body>
-  </html>
+      <div class="field full"><label>Item Type (Section)</label>
+        <select class="glass-effect" id="mType">
+          <option value="inventory">Inventory</option>
+          <option value="slow_moving">Slow Moving</option>
+          <option value="bom">BOM</option>
+          <option value="issue_voucher">Issue Voucher</option>
+          <option value="ir_voucher">IR / Move Order</option>
+          <option value="failure">Fail
