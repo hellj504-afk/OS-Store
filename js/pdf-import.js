@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Perfect Slow Moving Parser
+// PDF-IMPORT.JS — Final with 15-Char Cost Sync
 // ==========================================
 
 window.importedRows = [];
@@ -93,7 +93,8 @@ async function handlePDF(file) {
   }
 }
 
-function finalizeData(allRows, importType) {
+// ✅ 15-Char Match Logic for Cost Sync
+async function finalizeData(allRows, importType) {
   const map = {};
   allRows.forEach(r => {
     r.desc = r.desc.replace(/\s+/g, ' ').trim();
@@ -110,8 +111,39 @@ function finalizeData(allRows, importType) {
   });
   
   window.importedRows = Object.values(map);
-  const statusDiv = document.getElementById('pdfStatus');
 
+  // === SLOW MOVING COST SYNC ===
+  if (importType === 'slow_moving') {
+    try {
+      const existingData = await window.loadInventoryFromFirebase();
+      
+      const costMap = {};
+      window.importedRows.forEach(r => {
+         if (r.cost > 0) {
+            const shortCode = r.code.substring(0, 15); // First 15 chars
+            costMap[shortCode] = Number(r.cost);
+         }
+      });
+
+      let updateCount = 0;
+      for (const item of existingData) {
+         if (!item.source?.includes('slow_moving') && (!item.cost || Number(item.cost) === 0)) {
+            const itemShortCode = item.code.substring(0, 15);
+            let newCost = costMap[itemShortCode] || 0;
+            if (newCost > 0) {
+               item.cost = newCost;
+               await window.saveItemToFirebase(item);
+               updateCount++;
+            }
+         }
+      }
+      if (updateCount > 0) showToast(`Synced cost for ${updateCount} items!`, 'success');
+    } catch (e) {
+      console.error("Cost sync error:", e);
+    }
+  }
+
+  const statusDiv = document.getElementById('pdfStatus');
   if (!window.importedRows.length) { statusDiv.textContent = '⚠ No valid rows found.'; return; }
 
   document.getElementById('previewArea').style.display = 'block';
@@ -160,34 +192,19 @@ function parseNormalLine(words, item) {
   }
 }
 
-// ✅ FIXED: Slow Moving Parser (Only extracts Rate/Cost, No WIP)
 function parseSlowLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
-  const numR = /^[\d,]+\.?\d*$/;
+  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
   let uomI = -1;
-  
-  for (let i = 0; i < words.length; i++) {
-    if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
-  }
-
+  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
   if (uomI !== -1) {
-    // 1. Description
     item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
-    
-    // 2. Numbers after UOM
     const nums = [];
     for (let i = uomI + 1; i < words.length; i++) {
-      if (numR.test(words[i].text)) {
-        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-      }
+      if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
     }
-    
-    // Slow Moving: Qty is 1st, Rate/Cost is 2nd. 
     if (nums.length >= 1) item.qty = nums[0]; 
     if (nums.length >= 2) item.cost = nums[1]; 
-    
   } else {
-    // Description continuation
     let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
     if (ex.trim()) item.desc += ' ' + ex;
   }
