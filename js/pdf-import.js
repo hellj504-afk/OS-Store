@@ -1,5 +1,5 @@
 // ==========================================
-// PDF-IMPORT.JS — Final with 15-Char Cost Sync
+// PDF-IMPORT.JS — Clean Description & 15-Char Cost Sync
 // ==========================================
 
 window.importedRows = [];
@@ -93,26 +93,35 @@ async function handlePDF(file) {
   }
 }
 
-// ✅ 15-Char Match Logic for Cost Sync
+// ✅ Clean Description & 15-Char Cost Sync
 async function finalizeData(allRows, importType) {
   const map = {};
   allRows.forEach(r => {
+    // 1. Clean description (remove extra spaces)
     r.desc = r.desc.replace(/\s+/g, ' ').trim();
-    if (!importType.includes('bom') && !importType.includes('assembly') && r.subInv === 'N/A') {
+    
+    // 2. Extract '002' or similar from description and move to Sub Inv
+    if (!importType.includes('bom') && !importType.includes('assembly') && (r.subInv === 'N/A' || !r.subInv)) {
       const m = r.desc.match(/^'?(\d{3})\s+(.*)/);
-      if (m) { r.subInv = m[1]; r.desc = m[2]; }
+      if (m) { 
+        r.subInv = m[1]; 
+        r.desc = m[2]; // Remove the 002 from description
+      }
     }
+    
+    // 3. Merge rows (same code + same parent)
     const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
     if (map[key]) { 
       map[key].qty += r.qty; 
       if(r.cost > 0) map[key].cost = r.cost;
+    } else {
+      map[key] = r;
     }
-    else map[key] = r;
   });
   
   window.importedRows = Object.values(map);
 
-  // === SLOW MOVING COST SYNC ===
+  // === SLOW MOVING 15-CHAR COST SYNC ===
   if (importType === 'slow_moving') {
     try {
       const existingData = await window.loadInventoryFromFirebase();
