@@ -1,5 +1,5 @@
 // ==========================================
-// DASHBOARD.JS — Stats & Store Cost
+// DASHBOARD.JS — Smart Stats
 // ==========================================
 
 window.updateDashboardStats = function() {
@@ -9,14 +9,24 @@ window.updateDashboardStats = function() {
   const uniqueCodes = new Set(data.map(i => i.code));
   if (document.getElementById('statItems')) document.getElementById('statItems').textContent = uniqueCodes.size;
 
+  // Smart Cost Calculation Function
+  function getSmartCost(item) {
+    let cost = Number(item.cost) || 0;
+    if (cost === 0) {
+      const slowItem = data.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
+      if (slowItem && Number(slowItem.cost) > 0) cost = Number(slowItem.cost);
+    }
+    return cost;
+  }
+
   // 1. Total Inventory Cost (WIP)
   const invData = data.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly') && !i.source?.includes('store'));
-  const totalInvValue = invData.reduce((sum, item) => sum + ((Number(item.qty) || 0) * (Number(item.cost) || 0)), 0);
+  const totalInvValue = invData.reduce((sum, item) => sum + ((Number(item.qty) || 0) * getSmartCost(item)), 0);
   if (document.getElementById('statValue')) document.getElementById('statValue').textContent = formatCost(totalInvValue);
 
-  // 2. Store Cost (NEW)
+  // 2. Store Cost
   const storeData = data.filter(i => i.source && i.source.includes('store'));
-  const totalStoreValue = storeData.reduce((sum, item) => sum + ((Number(item.qty) || 0) * (Number(item.cost) || 0)), 0);
+  const totalStoreValue = storeData.reduce((sum, item) => sum + ((Number(item.qty) || 0) * getSmartCost(item)), 0);
   if (document.getElementById('statStoreValue')) document.getElementById('statStoreValue').textContent = formatCost(totalStoreValue);
 
   // 3. Low Stock Count
