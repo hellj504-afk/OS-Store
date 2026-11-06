@@ -1,9 +1,21 @@
 // ==========================================
-// INVENTORY.JS — Smart Cost (Syncs with Slow Moving)
+// INVENTORY.JS — Strict Slow Moving Filter
 // ==========================================
 
 window.inventoryData = [];
 window.isDataLoaded = false;
+
+// Helper: Agar item ki apni cost 0 hai, toh Slow Moving se uthao
+function getSmartCost(item) {
+  let cost = Number(item.cost) || 0;
+  if (cost === 0 && window.inventoryData) {
+    const slowItem = window.inventoryData.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
+    if (slowItem && Number(slowItem.cost) > 0) {
+      cost = Number(slowItem.cost);
+    }
+  }
+  return cost;
+}
 
 window.openManualAdd = function(type) {
   document.getElementById('itemModal').classList.add('open');
@@ -11,6 +23,7 @@ window.openManualAdd = function(type) {
   ['fCode','fSubInv','fUom','fDesc','fQty','fCost','fParent'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fCode').focus();
 };
+
 window.closeItemModal = function() { document.getElementById('itemModal').classList.remove('open'); };
 
 window.saveItemManual = async function() {
@@ -44,13 +57,13 @@ window.deleteItem = async function(code) {
 };
 
 window.clearSection = async function(type, btn) {
-  if (!confirm(`Kya aap waqai ${type.toUpperCase()} ka data clear karna chahte hain?`)) return;
+  if (!confirm(`Clear ${type.toUpperCase()} data?`)) return;
   const origText = btn ? btn.textContent : 'Clear';
   if (btn) { btn.disabled = true; btn.textContent = '0%...'; }
   try {
     const allData = await window.loadInventoryFromFirebase();
     let itemsToDelete = allData.filter(item => {
-      if (type === 'inventory') return !item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving') && !item.source.includes('issue') && !item.source.includes('ir') && !item.source.includes('failure') && !item.source.includes('store'));
+      if (type === 'inventory') return !item.source || (!item.source.includes('bom') && !item.source.includes('assembly') && !item.source.includes('slow_moving') && !item.source.includes('issue') && !item.source.includes('ir') && !item.source.includes('store'));
       if (type === 'store') return item.source && item.source.includes('store');
       if (type === 'slow_moving') return item.source && item.source.includes('slow_moving');
       if (type === 'bom') return item.source && (item.source.includes('bom') || item.source.includes('assembly'));
@@ -82,26 +95,17 @@ window.refreshInventoryData = async function() {
   if (window.renderBOM) renderBOM();
 };
 
-// Function to get cost from Slow Moving if item's own cost is 0
-function getSmartCost(item) {
-  let cost = Number(item.cost) || 0;
-  if (cost === 0 && window.inventoryData) {
-    // Search for this item code in Slow Moving data
-    const slowItem = window.inventoryData.find(i => i.code === item.code && i.source && i.source.includes('slow_moving'));
-    if (slowItem && Number(slowItem.cost) > 0) {
-      cost = Number(slowItem.cost);
-    }
-  }
-  return cost;
-}
-
 window.renderInventory = function() {
   const tbody = document.getElementById('inventoryTable'); if (!tbody) return;
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
-  
   let data = window.inventoryData.filter(i => !i.source?.includes('slow_moving') && !i.source?.includes('bom') && !i.source?.includes('assembly') && !i.source?.includes('store'));
+  
   const merged = {};
-  data.forEach(i => { const k = i.code + '_' + i.subInv; if (merged[k]) merged[k].qty += (Number(i.qty)||0); else merged[k] = { ...i, qty: Number(i.qty)||0 }; });
+  data.forEach(i => { 
+    const k = i.code + '_' + i.subInv; 
+    if (merged[k]) merged[k].qty += (Number(i.qty)||0); 
+    else merged[k] = { ...i, qty: Number(i.qty)||0 }; 
+  });
 
   let final = Object.values(merged).filter(i => !query || i.code.toLowerCase().includes(query));
   final.sort((a, b) => a.code.localeCompare(b.code));
@@ -124,10 +128,13 @@ window.renderInventory = function() {
 window.renderStore = function() {
   const tbody = document.getElementById('storeTable'); if (!tbody) return;
   const query = document.getElementById('storeSearch')?.value.toLowerCase() || '';
-  
   let data = window.inventoryData.filter(i => i.source && i.source.includes('store'));
+  
   const merged = {};
-  data.forEach(i => { if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; });
+  data.forEach(i => { 
+    if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); 
+    else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; 
+  });
 
   let final = Object.values(merged).filter(i => !query || i.code.toLowerCase().includes(query));
   final.sort((a, b) => a.code.localeCompare(b.code));
@@ -147,9 +154,12 @@ window.renderStore = function() {
   `}).join('');
 };
 
+// ✅ STRICT: Slow Moving Filter
 window.renderSlowMoving = function() {
   const tbody = document.getElementById('slowTable'); if (!tbody) return;
   const query = document.getElementById('slowSearch')?.value.toLowerCase() || '';
+  
+  // Only items where source includes 'slow_moving'
   let data = window.inventoryData.filter(i => i.source && i.source.includes('slow_moving'));
   data = data.filter(i => !query || i.code.toLowerCase().includes(query));
   
@@ -168,8 +178,12 @@ window.renderSlowMoving = function() {
 
 window.renderAlerts = function() {
   const tbody = document.getElementById('alertTable'); if (!tbody) return;
+  const query = document.getElementById('alertSearch')?.value.toLowerCase() || '';
   const merged = {};
-  window.inventoryData.forEach(i => { if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; });
+  window.inventoryData.forEach(i => { 
+    if (merged[i.code]) merged[i.code].qty += (Number(i.qty)||0); 
+    else merged[i.code] = { ...i, qty: Number(i.qty)||0 }; 
+  });
   
   let alerts = [];
   Object.values(merged).forEach(i => {
@@ -180,8 +194,10 @@ window.renderAlerts = function() {
     else if ((u === 'KGS' || u === 'KG') && q < 100) { alert = true; st = 'LOW (< 100)'; }
     if (alert) alerts.push({ ...i, st });
   });
-  
+
+  if (query) alerts = alerts.filter(i => i.code.toLowerCase().includes(query));
   alerts.sort((a, b) => a.qty - b.qty);
+  
   if (!alerts.length) return tbody.innerHTML = `<tr><td colspan="5" class="empty">All stock healthy!</td></tr>`;
 
   tbody.innerHTML = alerts.map(i => `
