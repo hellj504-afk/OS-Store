@@ -1,245 +1,281 @@
-// ==========================================
-// PDF-IMPORT.JS — Exact Cost Fix for Slow Moving
-// ==========================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoreOS — Dashboard</title>
 
-window.importedRows = [];
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for Graph -->
 
-if (typeof pdfjsLib !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}
+<link rel="stylesheet" href="css/background.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
 
-window.handleFileUpload = async function(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.name.toLowerCase().endsWith('.pdf')) handlePDF(file);
-  else showToast('Sirf PDF file upload karein!', 'error');
-};
+<div class="bg-canvas">
+  <div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div>
+  <div class="bg-grid"></div>
+</div>
 
-async function handlePDF(file) {
-  const statusDiv = document.getElementById('pdfStatus');
-  const importType = document.getElementById('importType').value;
-  statusDiv.textContent = '⏳ Reading PDF...';
-  statusDiv.className = 'pdf-status';
-  document.getElementById('previewArea').style.display = 'none';
+<div class="shell">
+  <header class="topbar glass-effect">
+    <div class="brand">
+      <div class="logo">◈</div>
+      <div>StoreOS <small>INVENTORY WORKSPACE</small></div>
+    </div>
+    
+    <nav class="nav" id="nav">
+      <button class="active" data-page="dashboard" onclick="switchPage('dashboard')">Dashboard</button>
+      <button data-page="inventory" onclick="switchPage('inventory')">Inventory</button>
+      <button data-page="slow_moving" onclick="switchPage('slow_moving')">Slow Moving</button>
+      <button data-page="bom" onclick="switchPage('bom')">BOM</button>
+      <button data-page="issue" onclick="switchPage('issue')">Issue</button>
+      <button data-page="ir" onclick="switchPage('ir')">IR / Move</button>
+      <button data-page="failure" onclick="switchPage('failure')">Failure</button>
+      <button data-page="alerts" onclick="switchPage('alerts')">Alerts</button>
+      <button data-page="pdf" onclick="switchPage('pdf')">PDF Import</button>
+    </nav>
+    
+    <div class="top-actions">
+      <div class="date-pill glass-effect glow-text" id="todayDate">—</div>
+      <div class="avatar glass-effect">S</div>
+    </div>
+  </header>
 
-  try {
-    const buf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-    let allRows = [];
-
-    for (let p = 1; p <= pdf.numPages; p++) {
-      const page = await pdf.getPage(p);
-      const content = await page.getTextContent();
-      const words = content.items.map(it => ({ text: String(it.str || '').trim(), x: it.transform[4], y: it.transform[5] })).filter(w => w.text !== '');
+  <main>
+    <!-- DASHBOARD (New Design) -->
+    <section id="page-dashboard" class="section-page active">
       
-      const lines = [];
-      words.forEach(word => {
-        let line = lines.find(l => Math.abs(l.y - word.y) < 5);
-        if (line) line.words.push(word);
-        else lines.push({ y: word.y, words: [word] });
-      });
-      lines.sort((a, b) => b.y - a.y);
-      lines.forEach(l => l.words.sort((a, b) => a.x - b.x));
+      <!-- Welcome Header -->
+      <div class="welcome-header">
+        <h1>Welcome back, Admin</h1>
+      </div>
 
-      let currentItem = null, currentParent = 'N/A';
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const lineText = line.words.map(w => w.text).join(' ');
-        if (!/[A-Z]{2,4}\d{3,4}-/.test(lineText) && !lineText.includes('Description')) continue;
-        if (lineText.includes('PAK ELEKTRON') || lineText.includes('Subinventory') || lineText.includes('Page')) continue;
+      <div class="dashboard-grid">
         
-        const codeWord = line.words.find(w => /^[A-Z]{2,4}\d{3,4}-\d{4,10}-\d{2}-\d{3,4}$/.test(w.text));
+        <!-- Top Left: Total Revenue -->
+        <div class="card glass-effect total-revenue-card">
+          <div class="card-title">Total Revenue</div>
+          <div class="revenue-value" id="statValue">Rs. 0</div>
+          <div class="revenue-sub">
+            <span class="badge-green">+12.5%</span> vs last month
+          </div>
+          <div class="revenue-tabs">
+            <button class="tab-btn">Monthly</button>
+            <button class="tab-btn active">Weekly</button>
+            <button class="tab-btn">Daily</button>
+          </div>
+        </div>
 
-        if (importType.includes('bom') || importType.includes('assembly')) {
-          if (codeWord) {
-             if (codeWord.text.startsWith('FG') || codeWord.text.startsWith('WIP')) currentParent = codeWord.text;
-             else {
-                let row = { subInv: 'N/A', code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0, parent: currentParent };
-                parseBomLine(line.words, row);
-                if(row.qty > 0) allRows.push(row);
-             }
-          } else if (currentParent !== 'N/A' && allRows.length > 0) {
-             const last = allRows[allRows.length - 1];
-             if (last.parent === currentParent) parseBomLine(line.words, last);
+        <!-- Top Right: Comparison Bars -->
+        <div class="card glass-effect comparison-card">
+          <div class="comp-header">
+            <div class="comp-val" id="statItems">0</div>
+            <div class="comp-label">Total Items</div>
+          </div>
+          <div class="comp-bars">
+            <div class="bar-group">
+              <div class="bar-label">In Stock</div>
+              <div class="bar-track"><div class="bar-fill" style="width: 80%"></div></div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-label">Low Stock</div>
+              <div class="bar-track"><div class="bar-fill danger" style="width: 30%"></div></div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-label">Out of Stock</div>
+              <div class="bar-track"><div class="bar-fill" style="width: 10%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Left: Analytics Chart -->
+        <div class="card glass-effect analytics-card">
+          <div class="panel-head">
+            <div class="card-title">Analytics</div>
+            <div class="legend">
+              <span class="dot income"></span> Income
+              <span class="dot expense"></span> Expense
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="myChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Bottom Middle: Activity Grid -->
+        <div class="card glass-effect activity-card">
+          <div class="card-title">Activity by time</div>
+          <div class="activity-grid">
+            <!-- Mock Grid squares -->
+            <div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square active"></div><div class="grid-square"></div>
+            <div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square"></div>
+            <div class="grid-square"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div>
+            <div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square"></div>
+            <div class="grid-square active"></div><div class="grid-square"></div><div class="grid-square active"></div><div class="grid-square active"></div><div class="grid-square active"></div>
+          </div>
+          <div class="grid-footer">
+            <span>Low</span>
+            <div class="color-scale">
+              <div class="scale-box s1"></div><div class="scale-box s2"></div><div class="scale-box s3"></div><div class="scale-box s4"></div>
+            </div>
+            <span>High</span>
+          </div>
+        </div>
+
+        <!-- Bottom Right: Recent Transactions -->
+        <div class="card glass-effect transactions-card">
+          <div class="card-title">Recent transactions</div>
+          <div class="tx-list">
+            <div class="tx-item">
+              <div class="tx-icon">📦</div>
+              <div class="tx-details">
+                <div class="tx-name">Inventory Update</div>
+                <div class="tx-desc">PDF Import Success</div>
+              </div>
+              <div class="tx-amount">+500</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-icon">⚠️</div>
+              <div class="tx-details">
+                <div class="tx-name">Low Stock Alert</div>
+                <div class="tx-desc">FG1060-00024</div>
+              </div>
+              <div class="tx-amount danger" id="statAlerts">0</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-icon">📤</div>
+              <div class="tx-details">
+                <div class="tx-name">Issue Voucher</div>
+                <div class="tx-desc">Material Issued</div>
+              </div>
+              <div class="tx-amount">-120</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INVENTORY (Unchanged) -->
+    <section id="page-inventory" class="section-page">
+      <div class="panel glass-effect">
+        <div class="panel-head"><div><h3>Custom Inventory</h3></div><div><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear All</button><button class="glass-blue-btn" onclick="openManualAdd('inventory')">＋ Add Manual</button></div></div>
+        <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Sub Inv</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th><th>Action</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- SLOW MOVING (Unchanged) -->
+    <section id="page-slow_moving" class="section-page">
+      <div class="panel glass-effect">
+        <div class="panel-head"><div><h3>Slow Moving</h3></div><div><button class="glass-clear-btn" onclick="clearSection('slow_moving', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('slow_moving')">＋ Add Manual</button></div></div>
+        <div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Rate</th><th>Value</th><th>Action</th></tr></thead><tbody id="slowTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- BOM, ISSUE, IR, FAILURE, ALERTS, PDF (Unchanged, keeping it short for readability) -->
+    <!-- ... (Aap yahan baaki sections rakh sakte hain jo pehle se hain) ... -->
+    
+    <section id="page-bom" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>BOM Management</h3></div><div><button class="glass-clear-btn" onclick="clearSection('bom', this)">Clear BOM</button><button class="glass-blue-btn" onclick="openManualAdd('bom')">＋ Add Manual</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Type</th><th>Parent</th><th>Child Code</th><th>Description</th><th>UOM</th><th>Qty</th></tr></thead><tbody id="bomTable"></tbody></table></div></div></section>
+    <section id="page-issue" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>Issue Voucher</h3></div><div><button class="glass-clear-btn" onclick="clearSection('issue_voucher', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('issue_voucher')">＋ Add Manual</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Qty Issued</th></tr></thead><tbody id="issueTable"></tbody></table></div></div></section>
+    <section id="page-ir" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>IR / Move Order</h3></div><div><button class="glass-clear-btn" onclick="clearSection('ir_voucher', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('ir_voucher')">＋ Add Manual</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>Demand Qty</th></tr></thead><tbody id="irTable"></tbody></table></div></div></section>
+    <section id="page-failure" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>Scrap / Failure</h3></div><div><button class="glass-clear-btn" onclick="clearSection('failure', this)">Clear</button><button class="glass-blue-btn" onclick="openManualAdd('failure')">＋ Add Manual</button></div></div><div class="form-grid" style="margin-bottom:20px; padding:15px;"><div class="field"><label>FG Code</label><input class="glass-effect" id="failCode" placeholder="Enter FG Code"></div><div class="field"><label>Failure Qty</label><input class="glass-effect" id="failQty" type="number" step="0.01" placeholder="0.00"></div><div class="field full" style="display:flex; justify-content:flex-end;"><button class="glass-blue-btn" onclick="calculateFailure(this)">🔍 Detect Material</button></div></div><div id="failureResultArea" style="display:none; margin-top:20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><h4 style="margin:0;">Required Materials</h4><h4 style="margin:0; color:#ff5e7e;">Total: <span id="failTotalCost">Rs. 0</span></h4></div><div class="table-wrap glass-effect"><table><thead><tr><th>Component</th><th>Description</th><th>Req Qty</th><th>UOM</th><th>Cost</th><th>Total</th><th>Action</th></tr></thead><tbody id="failureResultTable"></tbody></table></div></div></div></section>
+    <section id="page-alerts" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>⚠️ Low Stock Alerts</h3></div><div><button class="glass-blue-btn" onclick="downloadLowStockPDF()">⬇ Download PDF</button><button class="glass-clear-btn" onclick="clearSection('inventory', this)">Clear Inventory</button></div></div><div class="table-wrap glass-effect"><table><thead><tr><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Status</th></tr></thead><tbody id="alertTable"></tbody></table></div></div></section>
+    <section id="page-pdf" class="section-page"><div class="panel glass-effect"><div class="panel-head"><div><h3>📄 PDF Import</h3></div></div><div class="form-grid" style="margin-bottom:16px"><div class="field"><label>Import Type</label><select class="glass-effect" id="importType"><option value="inventory">Inventory</option><option value="slow_moving">Slow Moving</option><option value="pre_assembly">Pre Assembly</option><option value="final_assembly">Final Assembly</option><option value="bom">BOM Detail</option><option value="issue_voucher">Issue Voucher</option><option value="ir_voucher">IR / Move Order</option><option value="failure">Failure</option></select></div></div><div class="import-box glass-effect" onclick="document.getElementById('pdfFile').click()"><div style="font-size:36px;margin-bottom:10px">📥</div><div style="font-weight:700;font-size:14px">Click to Upload PDF</div><input type="file" id="pdfFile" accept=".pdf" style="display:none" onchange="handleFileUpload(event)"></div><div id="pdfStatus" class="pdf-status"></div><div id="importProgressBar" style="display:none; margin-top:15px; width:100%; height:10px; background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden;"><div id="importProgressFill" style="width:0%; height:100%; background:linear-gradient(90deg, #00f2fe, #4facfe, #f093fb); transition: width 0.1s;"></div></div><div id="importProgressText" style="display:none; text-align:center; font-size:12px; margin-top:5px; font-weight:bold; color:#4facfe;">0%</div><div id="previewArea" style="display:none; margin-top:20px;"><div class="preview-head"><strong>Preview: <span id="previewCount">0</span> rows</strong><button class="glass-blue-btn" onclick="confirmImport(this)">✓ Import Now</button></div><div class="table-wrap glass-effect" style="max-height:420px;overflow:auto"><table><thead><tr><th>Parent</th><th>Code</th><th>Description</th><th>UOM</th><th>Qty</th><th>Cost</th></tr></thead><tbody id="previewTable"></tbody></table></div></div></div></section>
+  </main>
+</div>
+
+<!-- MANUAL ADD MODAL -->
+<div class="modal" id="itemModal">
+  <div class="modal-card glass-effect">
+    <div class="modal-head"><h3>Add Item Manually</h3><button class="close glass-effect" onclick="closeItemModal()">×</button></div>
+    <div class="form-grid">
+      <div class="field full"><label>Item Type</label><select class="glass-effect" id="mType"><option value="inventory">Inventory</option><option value="slow_moving">Slow Moving</option><option value="bom">BOM</option><option value="issue_voucher">Issue Voucher</option><option value="ir_voucher">IR / Move Order</option><option value="failure">Failure</option></select></div>
+      <div class="field"><label>Item Code *</label><input class="glass-effect" id="fCode"></div>
+      <div class="field"><label>Sub Inv</label><input class="glass-effect" id="fSubInv"></div>
+      <div class="field"><label>UOM</label><input class="glass-effect" id="fUom"></div>
+      <div class="field"><label>Quantity</label><input class="glass-effect" id="fQty" type="number" step="0.01"></div>
+      <div class="field"><label>Cost</label><input class="glass-effect" id="fCost" type="number" step="0.01"></div>
+      <div class="field"><label>Parent</label><input class="glass-effect" id="fParent"></div>
+      <div class="field full"><label>Description</label><input class="glass-effect" id="fDesc"></div>
+    </div>
+    <div class="modal-actions"><button class="secondary water-btn" onclick="closeItemModal()">Cancel</button><button class="glass-blue-btn" onclick="saveItemManual()">Save</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Scripts -->
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/pdf-import.js"></script>
+<script src="js/bom.js"></script>
+<script src="js/app.js"></script>
+
+<!-- FALLBACK NAVIGATION -->
+<script>
+  function switchPage(pageName) {
+    document.querySelectorAll('.section-page').forEach(function(page) { page.classList.remove('active'); });
+    var targetPage = document.getElementById('page-' + pageName);
+    if (targetPage) targetPage.classList.add('active');
+    document.querySelectorAll('.nav button').forEach(function(btn) {
+      if (btn.getAttribute('data-page') === pageName) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+    var titles = { dashboard: 'Dashboard', inventory: 'Inventory', slow_moving: 'Slow Moving', bom: 'BOM Management', issue: 'Issue Voucher', ir: 'IR / Move Order', failure: 'Failure & Scrap', alerts: 'Low Stock Alerts', pdf: 'PDF Import' };
+    var titleEl = document.getElementById('headerTitle');
+    // Titles removed from header in new design, but keep logic if needed
+    if (pageName === 'alerts' && window.renderAlerts) window.renderAlerts();
+    if (pageName === 'slow_moving' && window.renderSlowMoving) window.renderSlowMoving();
+    if (pageName === 'bom' && window.renderBOM) window.renderBOM();
+  }
+
+  // Chart.js Initialization (Mock Data)
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('myChart');
+    if(ctx) {
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [
+            {
+              label: 'Income',
+              data: [12, 19, 15, 25, 22, 30, 35],
+              borderColor: '#00f2fe',
+              backgroundColor: 'rgba(0, 242, 254, 0.1)',
+              tension: 0.4,
+              fill: true,
+              pointRadius: 0
+            },
+            {
+              label: 'Expense',
+              data: [8, 12, 10, 18, 15, 20, 25],
+              borderColor: '#a653ff',
+              backgroundColor: 'transparent',
+              tension: 0.4,
+              borderDash: [5, 5],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false }
           }
-        } else {
-           if (codeWord) {
-             let subInv = 'N/A';
-             const subWord = line.words.find(w => w.x < codeWord.x && /^'?\d{3}$/.test(w.text));
-             if (subWord) subInv = subWord.text.replace("'", "");
-
-             currentItem = { subInv: subInv, code: codeWord.text, desc: '', uom: 'NOS', qty: 0, cost: 0 };
-             allRows.push(currentItem);
-             
-             // Slow Moving specific parser
-             if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
-             else parseNormalLine(line.words, currentItem);
-           } else if (currentItem) {
-             if (importType === 'slow_moving') parseSlowLine(line.words, currentItem);
-             else parseNormalLine(line.words, currentItem);
-           }
         }
-      }
+      });
     }
-    finalizeData(allRows, importType);
-  } catch (err) {
-    statusDiv.textContent = '❌ PDF Error: ' + err.message;
-  }
-}
-
-function finalizeData(allRows, importType) {
-  const map = {};
-  allRows.forEach(r => {
-    r.desc = r.desc.replace(/\s+/g, ' ').trim();
-    if (!importType.includes('bom') && !importType.includes('assembly') && r.subInv === 'N/A') {
-      const m = r.desc.match(/^'?(\d{3})\s+(.*)/);
-      if (m) { r.subInv = m[1]; r.desc = m[2]; }
-    }
-    const key = r.code + (r.parent && r.parent !== 'N/A' ? '_' + r.parent : '');
-    if (map[key]) { 
-      map[key].qty += r.qty; 
-      if(r.cost > 0) map[key].cost = r.cost; // Latest cost update karein
-    }
-    else map[key] = r;
   });
-  
-  window.importedRows = Object.values(map);
-  const statusDiv = document.getElementById('pdfStatus');
+</script>
 
-  if (!window.importedRows.length) { statusDiv.textContent = '⚠ No valid rows found.'; return; }
-
-  document.getElementById('previewArea').style.display = 'block';
-  document.getElementById('previewCount').textContent = window.importedRows.length;
-  
-  document.getElementById('previewTable').innerHTML = window.importedRows.slice(0, 200).map(r => `
-    <tr>
-      <td>${r.parent || 'N/A'}</td>
-      <td class="code">${r.code}</td>
-      <td>${r.desc}</td>
-      <td>${r.uom}</td>
-      <td>${formatNumber(r.qty)}</td>
-      <td>${r.cost > 0 ? 'Rs. ' + formatNumber(r.cost) : '-'}</td>
-    </tr>
-  `).join('');
-
-  statusDiv.textContent = `✓ Extracted ${window.importedRows.length} rows.`;
-  statusDiv.className = 'pdf-status success';
-}
-
-function parseBomLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
-  let uomI = -1;
-  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
-  if (uomI !== -1) {
-    item.desc = words.slice(0, uomI).map(w => w.text).filter(t => !numR.test(t) && t !== item.code).join(' ');
-    let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-    if (nums.length > 0) item.qty = nums[0];
-  } else {
-    let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
-    if (ex.trim()) item.desc += ' ' + ex;
-  }
-}
-
-function parseNormalLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i, numR = /^[\d,]+\.?\d*$/;
-  let uomI = -1;
-  for (let i = 0; i < words.length; i++) if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
-  if (uomI !== -1) {
-    item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code && !t.startsWith('P02-')).join(' ');
-    let nums = []; for (let i = uomI + 1; i < words.length; i++) if (numR.test(words[i].text)) nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-    if (nums.length > 0) item.qty = nums[nums.length - 1]; 
-  } else {
-    let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code && !w.text.includes(item.subInv) && !w.text.startsWith('P02-')).map(w => w.text).join(' ');
-    if (ex.trim()) item.desc += ' ' + ex;
-  }
-}
-
-// ✅ SLOW MOVING COST FIX (Yeh asal mein cost uthata hai)
-function parseSlowLine(words, item) {
-  const uomR = /^(NOS|KGS|MTR|LTR|SET|PC|PCS|KG|M|EA)$/i;
-  const numR = /^[\d,]+\.?\d*$/;
-  let uomI = -1;
-  
-  for (let i = 0; i < words.length; i++) {
-    if (uomR.test(words[i].text)) { uomI = i; item.uom = words[i].text.toUpperCase(); break; }
-  }
-
-  if (uomI !== -1) {
-    item.desc = words.slice(0, uomI).map(w => w.text).filter(t => t !== item.code).join(' ');
-    
-    const nums = [];
-    for (let i = uomI + 1; i < words.length; i++) {
-      if (numR.test(words[i].text)) {
-        nums.push(parseFloat(words[i].text.replace(/,/g, '')));
-      }
-    }
-    
-    // Asal format: Qty (pehla), Rate/Cost (dusra)
-    if (nums.length >= 1) item.qty = nums[0]; 
-    if (nums.length >= 2) item.cost = nums[1]; 
-    
-  } else {
-    let ex = words.filter(w => !numR.test(w.text) && w.text !== item.code).map(w => w.text).join(' ');
-    if (ex.trim()) item.desc += ' ' + ex;
-  }
-}
-
-window.confirmImport = async function(btnElement) {
-  if (!window.importedRows.length) return showToast('No data to import!', 'error');
-  const importType = document.getElementById('importType').value;
-  const progressBar = document.getElementById('importProgressBar');
-  const progressFill = document.getElementById('importProgressFill');
-  const progressText = document.getElementById('importProgressText');
-  
-  const originalText = btnElement ? btnElement.textContent : 'Import';
-  if (btnElement) { btnElement.textContent = 'Importing...'; btnElement.disabled = true; }
-  
-  if (progressBar) progressBar.style.display = 'block';
-  if (progressText) progressText.style.display = 'block';
-  if (progressFill) progressFill.style.width = '0%';
-  if (progressText) progressText.textContent = '0%';
-
-  try {
-    // Check if we need to clear old data
-    if (document.getElementById('chkDeleteOld')?.checked) {
-      if (progressText) progressText.textContent = 'Clearing old data...';
-      const allData = await window.loadInventoryFromFirebase();
-      for (const item of allData) {
-        if (item.source && item.source.includes(importType)) {
-          await window.deleteItemFromFirebase(item.id || item.code);
-        }
-      }
-    }
-
-    const toSave = window.importedRows.map(r => Object.assign({}, r, { source: `PDF (${importType})`, updatedAt: new Date().toISOString() }));
-    const total = toSave.length;
-    let count = 0;
-
-    for (const item of toSave) {
-      await window.saveItemToFirebase(item); 
-      count++;
-      const percent = Math.round((count / total) * 100);
-      if (progressFill) progressFill.style.width = percent + '%';
-      if (progressText) progressText.textContent = percent + '% Importing...';
-    }
-    
-    showToast(`Successfully imported ${count} items!`, 'success');
-    document.getElementById('previewArea').style.display = 'none';
-    document.getElementById('pdfStatus').textContent = `✓ Import complete: ${count} rows saved.`;
-    document.getElementById('pdfFile').value = ''; 
-    
-    if (progressText) progressText.textContent = '100% Complete!';
-    setTimeout(() => {
-       if (progressBar) progressBar.style.display = 'none';
-       if (progressText) progressText.style.display = 'none';
-    }, 1500);
-
-    await refreshInventoryData();
-
-  } catch (err) {
-    showToast('Import failed: ' + err.message, 'error');
-  } finally {
-    if (btnElement) { btnElement.textContent = originalText; btnElement.disabled = false; }
-  }
-};
+</body>
+        </html>
