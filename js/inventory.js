@@ -81,7 +81,6 @@ window.refreshInventoryData = async function() {
   if (window.renderBOM) renderBOM();
 };
 
-// Render with Filters
 window.renderInventory = function() {
   const tbody = document.getElementById('inventoryTable'); if (!tbody) return;
   const query = document.getElementById('invSearch')?.value.toLowerCase() || '';
